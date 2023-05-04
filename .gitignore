@@ -56,7 +56,7 @@ coverage.xml
 *.pot
 
 # Django stuff:
-*.log
+*.log*
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -127,3 +127,27 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#Specific paths
+*.root
+models*/
+*.auto.yaml
+CMSAK4/runs/
+CMSAK4/training/
+#performance/
+#*history*
+*.png
+#*roc*
+*.pt
+*.txt
+!requirements.txt
+monitor/
+*.npz
+*.npy
+*.log
+*.pickle
+history_plot*/
+roc_curve*/
+performance/*/*.yaml
+input/
+*.code-workspace

@@ -12,9 +12,17 @@ import math
 import torch
 
 from torch.utils.data import DataLoader
+
+#sys.path.append(os.path.join("..", ""))
 from weaver.utils.logger import _logger, _configLogger
 from weaver.utils.dataset import SimpleIterDataset
 from weaver.utils.import_tools import import_module
+from weaver.utils.nn.tools import save_labels_best_epoch
+
+
+'''orig_stdout = sys.stdout
+f = open('out_log.txt', 'w')
+sys.stdout = f'''
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--regression-mode', action='store_true', default=False,
@@ -135,13 +143,44 @@ parser.add_argument('--backend', type=str, choices=['gloo', 'nccl', 'mpi'], defa
                     help='backend for distributed training')
 parser.add_argument('--cross-validation', type=str, default=None,
                     help='enable k-fold cross validation; input format: `variable_name%k`')
-
+parser.add_argument('--val', action='store_true', default=False,
+                    help='perform only validation on the model state given in `--model-prefix`')
+parser.add_argument('--train', action='store_true', default=False,
+                    help='perform only training on the model state given in `--model-prefix`')
+parser.add_argument('--test', action='store_true', default=False,
+                    help='test the model on the `--data-test` sample')
+parser.add_argument('--force-lr', action='store_true', default=False,
+                    help='force the lr to be `--start-lr`')
+parser.add_argument('--no-aux-epoch', type=float, default=1e9,
+                    help='if epoch >= `--no-aux-epoch` do not consider auxiliary loss when training'
+                    'unlsess `--aux-saturation` is set, in which case the auxiliary loss is saturated to the value'
+                    'it has at `--no-aux-epoch`')
+parser.add_argument('--aux-saturation', action='store_true', default=False,
+                    help='if set, the auxiliary loss is saturated to the value it has at `--no-aux-epoch`')
+parser.add_argument('--val-epochs', type=str, default='-1',
+                    help='epochs on which the validation is performed'
+                    'if not provided perform on every epoch'
+                    'separate the epochs with `,` in order to indicate them one by one'
+                    'separate the epochs with `:` in order to indicate an interval'
+                    'if set to `best` the validation is performed on the best epoch')
+parser.add_argument('--test-epochs', type=str, default='',
+                    help='epochs on which the validation is performed'
+                    'if not provided same as `--val-epochs`'
+                    'if set to `-1` perform on all the epochs'
+                    'separate the epochs with `,` in order to indicate them one by one'
+                    'separate the epochs with `:` in order to indicate an interval'
+                    'if set to `best+last` the validation is performed on the best and last epochs'
+                    'if set to `best` the validation is performed on the best epoch')
+parser.add_argument('--epoch-division', type=int, default=5,
+                    help='number of printouts during an epoch')
 
 def to_filelist(args, mode='train'):
     if mode == 'train':
         flist = args.data_train
     elif mode == 'val':
         flist = args.data_val
+    elif mode == 'test':
+        flist = args.data_test
     else:
         raise NotImplementedError('Invalid mode %s' % mode)
 
@@ -212,6 +251,7 @@ def train_load(args):
         val_file_dict, val_files = train_file_dict, train_files
         train_range = (0, args.train_val_split)
         val_range = (args.train_val_split, 1)
+
     _logger.info('Using %d files for training, range: %s' % (len(train_files), str(train_range)))
     _logger.info('Using %d files for validation, range: %s' % (len(val_files), str(val_range)))
 
@@ -228,36 +268,53 @@ def train_load(args):
     if args.in_memory and (args.steps_per_epoch is None or args.steps_per_epoch_val is None):
         raise RuntimeError('Must set --steps-per-epoch when using --in-memory!')
 
-    train_data = SimpleIterDataset(train_file_dict, args.data_config, for_training=True,
-                                   extra_selection=args.extra_selection,
-                                   remake_weights=not args.no_remake_weights,
-                                   load_range_and_fraction=(train_range, args.data_fraction),
-                                   file_fraction=args.file_fraction,
-                                   fetch_by_files=args.fetch_by_files,
-                                   fetch_step=args.fetch_step,
-                                   infinity_mode=args.steps_per_epoch is not None,
-                                   in_memory=args.in_memory,
-                                   name='train' + ('' if args.local_rank is None else '_rank%d' % args.local_rank))
-    val_data = SimpleIterDataset(val_file_dict, args.data_config, for_training=True,
-                                 extra_selection=args.extra_selection,
-                                 load_range_and_fraction=(val_range, args.data_fraction),
-                                 file_fraction=args.file_fraction,
-                                 fetch_by_files=args.fetch_by_files,
-                                 fetch_step=args.fetch_step,
-                                 infinity_mode=args.steps_per_epoch_val is not None,
-                                 in_memory=args.in_memory,
-                                 name='val' + ('' if args.local_rank is None else '_rank%d' % args.local_rank))
-    train_loader = DataLoader(train_data, batch_size=args.batch_size, drop_last=True, pin_memory=True,
-                              num_workers=min(args.num_workers, int(len(train_files) * args.file_fraction)),
-                              persistent_workers=args.num_workers > 0 and args.steps_per_epoch is not None)
-    val_loader = DataLoader(val_data, batch_size=args.batch_size, drop_last=True, pin_memory=True,
-                            num_workers=min(args.num_workers, int(len(val_files) * args.file_fraction)),
-                            persistent_workers=args.num_workers > 0 and args.steps_per_epoch_val is not None)
-    data_config = train_data.config
-    train_input_names = train_data.config.input_names
-    train_label_names = train_data.config.label_names
+    data_config = None
+    train_input_names = None
+    train_label_names = None
+    train_aux_label_names = None
 
-    return train_loader, val_loader, data_config, train_input_names, train_label_names
+    if args.train:
+        train_data = SimpleIterDataset(train_file_dict, args.data_config, for_training=True,
+                                    extra_selection=args.extra_selection,
+                                    remake_weights=not args.no_remake_weights,
+                                    load_range_and_fraction=(train_range, args.data_fraction),
+                                    file_fraction=args.file_fraction,
+                                    fetch_by_files=args.fetch_by_files,
+                                    fetch_step=args.fetch_step,
+                                    infinity_mode=args.steps_per_epoch is not None,
+                                    in_memory=args.in_memory,
+                                    name='train' + ('' if args.local_rank is None else '_rank%d' % args.local_rank))
+        train_loader = DataLoader(train_data, batch_size=args.batch_size, drop_last=True, pin_memory=True,
+                                num_workers=min(args.num_workers, int(len(train_files) * args.file_fraction)),
+                                persistent_workers=args.num_workers > 0 and args.steps_per_epoch is not None)
+
+        data_config = train_data.config
+        train_input_names = train_data.config.input_names
+        train_label_names = train_data.config.label_names
+        train_aux_label_names = train_data.config.aux_label_names
+    else:
+        train_data = None
+        train_loader = None
+
+    if args.val:
+        val_data = SimpleIterDataset(val_file_dict, args.data_config, for_training=True,
+                                    extra_selection=args.extra_selection,
+                                    load_range_and_fraction=(val_range, args.data_fraction),
+                                    file_fraction=args.file_fraction,
+                                    fetch_by_files=args.fetch_by_files,
+                                    fetch_step=args.fetch_step,
+                                    infinity_mode=args.steps_per_epoch_val is not None,
+                                    in_memory=args.in_memory,
+                                    name='val' + ('' if args.local_rank is None else '_rank%d' % args.local_rank))
+        val_loader = DataLoader(val_data, batch_size=args.batch_size, drop_last=True, pin_memory=True,
+                                num_workers=min(args.num_workers, int(len(val_files) * args.file_fraction)),
+                                persistent_workers=args.num_workers > 0 and args.steps_per_epoch_val is not None)
+        if data_config is None: data_config = val_data.config
+    else:
+        val_data = None
+        val_loader = None
+
+    return train_loader, val_loader, data_config, train_input_names, train_label_names, train_aux_label_names
 
 
 def test_load(args):
@@ -324,7 +381,7 @@ def onnx(args):
 
     from weaver.utils.dataset import DataConfig
     data_config = DataConfig.load(args.data_config, load_observers=False, load_reweight_info=False)
-    model, model_info, _ = model_setup(args, data_config)
+    model, model_info, _ = model_setup(args, data_config, torch.device('cpu'))
     model.load_state_dict(torch.load(model_path, map_location='cpu'))
     model = model.cpu()
     model.eval()
@@ -487,6 +544,9 @@ def optim(args, model, device):
         if os.path.exists(opt_state_file):
             opt_state = torch.load(opt_state_file, map_location=device)
             opt.load_state_dict(opt_state)
+            if args.force_lr:
+                for g in opt.param_groups:
+                    g['lr'] = args.start_lr
         else:
             _logger.warning('Optimizer state file %s NOT found!' % opt_state_file)
 
@@ -542,7 +602,7 @@ def optim(args, model, device):
     return opt, scheduler
 
 
-def model_setup(args, data_config):
+def model_setup(args, data_config, dev):
     """
     Loads the model
     :param args:
@@ -567,12 +627,18 @@ def model_setup(args, data_config):
     # loss function
     try:
         loss_func = network_module.get_loss(data_config, **network_options)
+        aux_loss_func_clas = network_module.get_aux_loss_clas(data_config, dev, **network_options)
+        aux_loss_func_regr = network_module.get_aux_loss_regr(data_config, **network_options)
+        aux_loss_func_bin = network_module.get_aux_loss_bin(data_config, **network_options)
         _logger.info('Using loss function %s with options %s' % (loss_func, network_options))
     except AttributeError:
         loss_func = torch.nn.CrossEntropyLoss()
-        _logger.warning('Loss function not defined in %s. Will use `torch.nn.CrossEntropyLoss()` by default.',
+        aux_loss_func_clas = torch.nn.CrossEntropyLoss()
+        aux_loss_func_regr = torch.nn.MSELoss()
+        aux_loss_func_bin = torch.nn.BCEWithLogitsLoss()
+        _logger.warning('Loss function not defined in %s. Will use `torch.nn.CrossEntropyLoss()`,`torch.nn.MSELoss()` and `torch.nn.BCEWithLogitsLoss()` by default.',
                         args.network_config)
-    return model, model_info, loss_func
+    return model, model_info, loss_func, aux_loss_func_clas, aux_loss_func_regr, aux_loss_func_bin
 
 
 def iotest(args, data_loader):
@@ -648,6 +714,98 @@ def save_parquet(args, output_path, scores, labels, observers):
     ak.to_parquet(ak.Array(output), output_path, compression='LZ4', compression_level=4)
 
 
+def copy_log(args, epoch, type_log = ""):
+    dirname=os.path.dirname(args.model_prefix)
+    performance_dir=os.path.join(dirname, f'performance_{dirname.split("/")[-1].strip()}')
+    log_name=os.path.join(performance_dir,
+        f'{dirname.split("/")[-1].strip()}{epoch:02d}{type_log}.log')
+    old_log_file=open(args.log).read()
+    with open(log_name, 'w') as f:
+        new_log = old_log_file[:old_log_file.index('Epoch #')]
+        new_log += old_log_file[old_log_file.index(f'Epoch #{epoch} {type_log}'):]
+        f.write(new_log)
+
+
+    _logger.info('log file copied to: \n%s' % log_name)
+    _logger.info('Performance data are stored in directory: \n%s/' % performance_dir)
+
+def best_epoch_handler(args, best_epoch, best_valid_metric, valid_metric,
+                       best_valid_comb_loss, valid_comb_loss,
+                       best_valid_loss, valid_loss,
+                       best_valid_aux_metric_pf, valid_aux_metric_pf,
+                       best_valid_aux_dist, valid_aux_dist,
+                       best_valid_aux_metric_pair, valid_aux_metric_pair,
+                       best_valid_aux_loss, valid_aux_loss,
+                       local_rank, epoch, roc_prefix, eval_type = 'validation', test = False,
+                       best=False):
+
+    is_best_epoch = (
+        valid_metric < best_valid_metric) if args.regression_mode else(
+        valid_metric > best_valid_metric)
+    if (is_best_epoch and not test) or best:
+        best_epoch=epoch
+        best_valid_metric = valid_metric
+        best_valid_comb_loss = valid_comb_loss
+        best_valid_loss = valid_loss
+        best_valid_aux_metric_pf= valid_aux_metric_pf
+        best_valid_aux_dist= valid_aux_dist
+        best_valid_aux_metric_pair= valid_aux_metric_pair
+        best_valid_aux_loss = valid_aux_loss
+        if not test:
+            if args.model_prefix and (args.backend is None or local_rank == 0):
+                shutil.copy2((args.model_prefix).split('_epoch')[0] + '_epoch-%d_state.pt' %
+                                epoch, args.model_prefix + '_best_epoch_state.pt')
+                # torch.save(model, args.model_prefix + '_best_epoch_full.pt')
+
+    if test and best:
+        #save labels for roc curve of best epoch
+        for label_type in ["primary", "aux"]:
+            save_labels_best_epoch(f'{roc_prefix}{label_type}_labels_epoch_{epoch:02d}.npz')
+
+    _logger.info('Epoch #%d: Info saved in log file:\n%s' % (epoch, args.log))
+    _logger.info('Best epoch: #%d' % (best_epoch))
+    _logger.info('Epoch #%d: Current %s metric: %.5f (best: %.5f)  //  Current %s combined loss: %.5f (in best epoch: %.5f)  //  Current %s loss: %.5f (in best epoch: %.5f)' %
+                    (epoch, eval_type, valid_metric, best_valid_metric, eval_type, valid_comb_loss,
+                    best_valid_comb_loss, eval_type, valid_loss, best_valid_loss), color='bold')
+    _logger.info('Epoch #%d: Current %s aux metric PF: %.5f (in best epoch: %.5f)  //  Current %s aux distance: %.5f (in best epoch: %.5f)  //  Current %s aux metric pair: %.5f (in best epoch: %.5f)  //  Current %s aux loss: %.5f (in best epoch: %.5f)' %
+                    (epoch, eval_type, valid_aux_metric_pf, best_valid_aux_metric_pf,
+                    eval_type, valid_aux_dist, best_valid_aux_dist, eval_type, valid_aux_metric_pair,
+                    best_valid_aux_metric_pair, eval_type, valid_aux_loss, best_valid_aux_loss), color='bold')
+
+    return best_epoch, best_valid_metric, best_valid_loss, best_valid_comb_loss, \
+        best_valid_aux_metric_pf, best_valid_aux_dist, best_valid_aux_loss,\
+        best_valid_aux_metric_pair
+
+def get_best_metrics(args, last_epoch, best_epoch, best_valid_metric, best_valid_loss, best_valid_comb_loss, \
+        best_valid_aux_metric_pf, best_valid_aux_dist, best_valid_aux_loss,\
+        best_valid_aux_metric_pair, test):
+    dirname = os.path.dirname(args.model_prefix)
+    suffix=dirname.split('/')[-1].strip()
+    performance_dir=os.path.join(dirname, f'performance_{suffix}', '')
+    for file in os.listdir(performance_dir):
+        if f'{last_epoch:02d}val.log' in file:
+            with open(os.path.join(performance_dir,file)) as f:
+                f = f.readlines()
+            for line in f:
+                try:
+                    if 'Best epoch' in line:
+                        best_epoch=int(line.split(': #',1)[1].split('\n')[0])
+                        if test: break
+                    elif 'validation metric' in line :
+                        best_valid_metric=float(line.split('(best: ',1)[1].split(')')[0])
+                        best_valid_comb_loss=float(line.split('(in best epoch: ')[1].split(')')[0])
+                        best_valid_loss=float(line.split('(in best epoch: ')[2].split(')')[0])
+                    elif 'validation aux metric' in line :
+                        best_valid_aux_metric_pf=float(line.split('(in best epoch: ')[1].split(')')[0])
+                        best_valid_aux_dist=float(line.split('(in best epoch: ')[2].split(')')[0])
+                        best_valid_aux_metric_pair=float(line.split('(in best epoch: ')[3].split(')')[0])
+                        best_valid_aux_loss=float(line.split('(in best epoch: ')[4].split(')')[0])
+                except IndexError:
+                    pass
+    return best_epoch, best_valid_metric, best_valid_loss, best_valid_comb_loss, \
+        best_valid_aux_metric_pf, best_valid_aux_dist, best_valid_aux_loss,\
+        best_valid_aux_metric_pair
+
 def _main(args):
     _logger.info('args:\n - %s', '\n - '.join(str(it) for it in args.__dict__.items()))
 
@@ -670,8 +828,11 @@ def _main(args):
         from weaver.utils.nn.tools import evaluate_classification as evaluate
 
     # training/testing mode
-    training_mode = not args.predict
+    training_mode = not args.predict and  args.train
 
+    if args.train and args.test and not args.val:
+        raise RuntimeError("Please test only on already trained and validated models")
+    local_rank = None
     # device
     if args.gpus:
         # distributed training
@@ -680,7 +841,12 @@ def _main(args):
             torch.cuda.set_device(local_rank)
             gpus = [local_rank]
             dev = torch.device(local_rank)
-            torch.distributed.init_process_group(backend=args.backend)
+            #torch.distributed.init_process_group(backend=args.backend)
+            torch.distributed.init_process_group(backend=args.backend,
+                                                 init_method='env://',
+                                                 world_size=int(os.environ['WORLD_SIZE']),
+                                                 rank=int(os.environ["LOCAL_RANK"]))
+
             _logger.info(f'Using distributed PyTorch with {args.backend} backend')
         else:
             gpus = [int(i) for i in args.gpus.split(',')]
@@ -690,9 +856,9 @@ def _main(args):
         dev = torch.device('cpu')
 
     # load data
-    if training_mode:
-        train_loader, val_loader, data_config, train_input_names, train_label_names = train_load(args)
-    else:
+    if args.train or args.val:
+        train_loader, val_loader, data_config, train_input_names, train_label_names, train_aux_label_names = train_load(args)
+    elif args.predict or args.test:
         test_loaders, data_config = test_load(args)
 
     if args.io_test:
@@ -700,7 +866,7 @@ def _main(args):
         iotest(args, data_loader)
         return
 
-    model, model_info, loss_func = model_setup(args, data_config)
+    model, model_info, loss_func, aux_loss_func_clas, aux_loss_func_regr, aux_loss_func_bin = model_setup(args, data_config, dev)
 
     # TODO: load checkpoint
     # if args.backend is not None:
@@ -723,13 +889,48 @@ def _main(args):
     # so we do not convert it to nn.DataParallel now
     orig_model = model
 
+    best_epoch, best_valid_metric, best_valid_loss, best_valid_comb_loss, \
+    best_valid_aux_metric_pf, best_valid_aux_dist, best_valid_aux_loss,\
+    best_valid_aux_metric_pair = -1, np.inf if args.regression_mode else -1, 0,0,0,0,0,0
+
+    last_epoch = -1
+    test = False
+    if args.load_epoch is not None and args.train:
+        last_epoch = args.load_epoch
+        test=False
+    elif args.val and not args.train:
+        try:
+            last_epoch = int(args.val_epochs[:2]) - 1
+        except:
+            last_epoch = int(args.val_epochs[0]) - 1
+        test=False
+    elif args.test and not (args.train or args.val):
+        dirname = os.path.dirname(args.model_prefix)
+        suffix=dirname.split('/')[-1].strip()
+        performance_dir=os.path.join(dirname, f'performance_{suffix}', '')
+        #print(os.listdir(performance_dir))
+        for file in sorted(os.listdir(performance_dir)):
+            if 'val.log'in file:
+                last_epoch = int(file.split('val')[0][-2:])
+        test=True
+    if last_epoch != -1:
+        best_epoch, best_valid_metric, best_valid_loss, best_valid_comb_loss, \
+        best_valid_aux_metric_pf, best_valid_aux_dist, best_valid_aux_loss,\
+        best_valid_aux_metric_pair = get_best_metrics(args, last_epoch, \
+            best_epoch, best_valid_metric, best_valid_loss, best_valid_comb_loss, \
+            best_valid_aux_metric_pf, best_valid_aux_dist, best_valid_aux_loss,\
+            best_valid_aux_metric_pair, test)
+
+
+
     if training_mode:
         model = orig_model.to(dev)
 
         # DistributedDataParallel
         if args.backend is not None:
+            torch.cuda.set_device(local_rank)
             model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=gpus, output_device=local_rank)
+            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=gpus)#, output_device=local_rank)
 
         # optimizer & learning rate
         opt, scheduler = optim(args, model, dev)
@@ -747,25 +948,49 @@ def _main(args):
             from weaver.utils.lr_finder import LRFinder
             lr_finder = LRFinder(model, opt, loss_func, device=dev, input_names=train_input_names,
                                  label_names=train_label_names)
+            # HERE lr_finder is a complementary feature
+            # maybe put lr_finder where instead of labels put aux_labels and change loss function
             lr_finder.range_test(train_loader, start_lr=float(start_lr), end_lr=float(end_lr), num_iter=int(num_iter))
             lr_finder.plot(output='lr_finder.png')  # to inspect the loss-learning rate graph
             return
 
         # training loop
-        best_valid_metric = np.inf if args.regression_mode else 0
         grad_scaler = torch.cuda.amp.GradScaler() if args.use_amp else None
         for epoch in range(args.num_epochs):
             if args.load_epoch is not None:
                 if epoch <= args.load_epoch:
                     continue
+
+            if epoch >= args.no_aux_epoch and not args.aux_saturation:
+                aux_weight = 0
+            elif epoch >= args.no_aux_epoch and args.aux_saturation:
+                aux_weight= 1/(args.no_aux_epoch)
+            else:
+                aux_weight = 1/(epoch+1)
+
             _logger.info('-' * 50)
-            _logger.info('Epoch #%d training' % epoch)
-            train(model, loss_func, opt, scheduler, train_loader, dev, epoch,
-                  steps_per_epoch=args.steps_per_epoch, grad_scaler=grad_scaler, tb_helper=tb)
+            if not args.val:
+                _logger.info('Epoch #%d training only' % epoch)
+            else:
+                _logger.info('Epoch #%d training' % epoch)
+
             if args.model_prefix and (args.backend is None or local_rank == 0):
                 dirname = os.path.dirname(args.model_prefix)
+                suffix=dirname.split('/')[-1].strip()
+                performance_dir=os.path.join(dirname, f'performance_{suffix}', '')
                 if dirname and not os.path.exists(dirname):
                     os.makedirs(dirname)
+                if performance_dir and not os.path.exists(performance_dir):
+                    os.makedirs(performance_dir)
+                roc_prefix=os.path.join(performance_dir,suffix)
+
+            train(model, loss_func, aux_loss_func_clas, aux_loss_func_regr,
+                  aux_loss_func_bin, opt, scheduler, train_loader, dev, epoch, aux_weight,
+                  steps_per_epoch=args.steps_per_epoch, grad_scaler=grad_scaler,
+                  tb_helper=tb, epoch_division = args.epoch_division)
+
+
+            if args.model_prefix and (args.backend is None or local_rank == 0):
                 state_dict = model.module.state_dict() if isinstance(
                     model, (torch.nn.DataParallel, torch.nn.parallel.DistributedDataParallel)) else model.state_dict()
                 torch.save(state_dict, args.model_prefix + '_epoch-%d_state.pt' % epoch)
@@ -774,27 +999,39 @@ def _main(args):
             # TODO: save checkpoint
             #     save_checkpoint()
 
-            _logger.info('Epoch #%d validating' % epoch)
-            valid_metric = evaluate(model, val_loader, dev, epoch, loss_func=loss_func,
-                                    steps_per_epoch=args.steps_per_epoch_val, tb_helper=tb)
-            is_best_epoch = (
-                valid_metric < best_valid_metric) if args.regression_mode else(
-                valid_metric > best_valid_metric)
-            if is_best_epoch:
-                best_valid_metric = valid_metric
-                if args.model_prefix and (args.backend is None or local_rank == 0):
-                    shutil.copy2(args.model_prefix + '_epoch-%d_state.pt' %
-                                 epoch, args.model_prefix + '_best_epoch_state.pt')
-                    # torch.save(model, args.model_prefix + '_best_epoch_full.pt')
-            _logger.info('Epoch #%d: Current validation metric: %.5f (best: %.5f)' %
-                         (epoch, valid_metric, best_valid_metric), color='bold')
+            copy_log(args, epoch, 'train')
+
+            if args.val:
+                _logger.info('Epoch #%d validating' % epoch)
+                valid_metric, valid_comb_loss, valid_loss, valid_aux_metric_pf,\
+                valid_aux_dist, valid_aux_metric_pair, valid_aux_loss = \
+                        evaluate(model, val_loader, dev, epoch, aux_weight, loss_func=loss_func,
+                            aux_loss_func_clas=aux_loss_func_clas, aux_loss_func_regr=aux_loss_func_regr,
+                            aux_loss_func_bin=aux_loss_func_bin,
+                            steps_per_epoch=args.steps_per_epoch_val, tb_helper=tb, roc_prefix=roc_prefix, epoch_division=args.epoch_division)
+
+                best_epoch, best_valid_metric, best_valid_loss, best_valid_comb_loss, \
+                best_valid_aux_metric_pf, best_valid_aux_dist, best_valid_aux_loss,\
+                best_valid_aux_metric_pair = best_epoch_handler(args, best_epoch,
+                        best_valid_metric, valid_metric,
+                        best_valid_comb_loss, valid_comb_loss,
+                        best_valid_loss, valid_loss,
+                        best_valid_aux_metric_pf, valid_aux_metric_pf,
+                        best_valid_aux_dist, valid_aux_dist,
+                        best_valid_aux_metric_pair, valid_aux_metric_pair,
+                        best_valid_aux_loss, valid_aux_loss,
+                        local_rank, epoch, roc_prefix)
+                copy_log(args,epoch, 'val')
 
     if args.data_test:
         if args.backend is not None and local_rank != 0:
             return
-        if training_mode:
-            del train_loader, val_loader
-            test_loaders, data_config = test_load(args)
+        try:
+            del train_loader
+        except UnboundLocalError:
+            pass
+        if args.val and args.train: del val_loader
+
 
         if not args.model_prefix.endswith('.onnx'):
             if args.predict_gpus:
@@ -804,45 +1041,178 @@ def _main(args):
                 gpus = None
                 dev = torch.device('cpu')
             model = orig_model.to(dev)
-            model_path = args.model_prefix if args.model_prefix.endswith(
-                '.pt') else args.model_prefix + '_best_epoch_state.pt'
-            _logger.info('Loading model %s for eval' % model_path)
-            model.load_state_dict(torch.load(model_path, map_location=dev))
-            if gpus is not None and len(gpus) > 1:
-                model = torch.nn.DataParallel(model, device_ids=gpus)
-            model = model.to(dev)
 
-        for name, get_test_loader in test_loaders.items():
-            test_loader = get_test_loader()
-            # run prediction
-            if args.model_prefix.endswith('.onnx'):
-                _logger.info('Loading model %s for eval' % args.model_prefix)
-                from weaver.utils.nn.tools import evaluate_onnx
-                test_metric, scores, labels, observers = evaluate_onnx(args.model_prefix, test_loader)
+            if ',' in args.val_epochs:
+                val_epochs = [int(i) for i in args.val_epochs.split(',')]
+            elif ':' in args.val_epochs:
+                val_epochs_ext= [int(i) for i in args.val_epochs.split(':')]
+                val_epochs = [i for i in range(val_epochs_ext[0], val_epochs_ext[1]+1)]
+            elif args.val_epochs == '-1':
+                val_epoch_len = len([filename for filename in os.listdir(os.path.dirname(args.model_prefix))\
+                                    if '_state.pt' in filename and 'best' not in filename])
+                val_epochs = [int(i) for i in range(val_epoch_len)]
             else:
-                test_metric, scores, labels, observers = evaluate(
-                    model, test_loader, dev, epoch=None, for_training=False, tb_helper=tb)
-            _logger.info('Test metric %.5f' % test_metric, color='bold')
-            del test_loader
+                val_epochs = [int(args.val_epochs)]
 
-            if args.predict_output:
-                if '/' not in args.predict_output:
-                    predict_output = os.path.join(
-                        os.path.dirname(args.model_prefix),
-                        'predict_output', args.predict_output)
+        if args.model_prefix and (args.backend is None or local_rank == 0):
+            dirname = os.path.dirname(args.model_prefix)
+            suffix=dirname.split('/')[-1].strip()
+            performance_dir=os.path.join(dirname, f'performance_{suffix}', '')
+            if performance_dir and not os.path.exists(performance_dir):
+                os.makedirs(performance_dir)
+            roc_prefix=os.path.join(performance_dir,suffix)
+
+            if args.val and not args.train:
+                performance_files = os.listdir(performance_dir)
+
+                for epoch in val_epochs:
+                    model_path = f'{args.model_prefix}_epoch-{epoch}_state.pt'
+                    _logger.info('Loading model %s for eval' % model_path)
+                    model.load_state_dict(torch.load(model_path, map_location=dev))
+                    if gpus is not None and len(gpus) > 1:
+                        model = torch.nn.DataParallel(model, device_ids=gpus)
+                    model = model.to(dev)
+                    _logger.info('Epoch #%d validating only' % epoch)
+
+                    if epoch >= args.no_aux_epoch and not args.aux_saturation:
+                        aux_weight = 0
+                    elif epoch >= args.no_aux_epoch and args.aux_saturation:
+                        aux_weight= 1/(args.no_aux_epoch)
+                    else:
+                        aux_weight = 1/(epoch+1)
+
+                    valid_metric, valid_comb_loss, valid_loss, valid_aux_metric_pf,\
+                    valid_aux_dist, valid_aux_metric_pair, valid_aux_loss = \
+                    evaluate(model, val_loader, dev, epoch, aux_weight,loss_func=loss_func,
+                            aux_loss_func_clas=aux_loss_func_clas, aux_loss_func_regr=aux_loss_func_regr,
+                            aux_loss_func_bin=aux_loss_func_bin,
+                            steps_per_epoch=args.steps_per_epoch_val, tb_helper=tb,
+                            roc_prefix=roc_prefix, epoch_division=args.epoch_division)
+
+                    best_epoch, best_valid_metric, best_valid_loss, best_valid_comb_loss, \
+                    best_valid_aux_metric_pf, best_valid_aux_dist, best_valid_aux_loss,\
+                    best_valid_aux_metric_pair = best_epoch_handler(args, best_epoch,
+                        best_valid_metric, valid_metric,
+                        best_valid_comb_loss, valid_comb_loss,
+                        best_valid_loss, valid_loss,
+                        best_valid_aux_metric_pf, valid_aux_metric_pf,
+                        best_valid_aux_dist, valid_aux_dist,
+                        best_valid_aux_metric_pair, valid_aux_metric_pair,
+                        best_valid_aux_loss, valid_aux_loss,
+                        local_rank, epoch, roc_prefix)
+                    copy_log(args, epoch, "val")
+
+            elif not args.test and not training_mode:
+                for name, get_test_loader in test_loaders.items():
+                    test_loader = get_test_loader()
+                    # run prediction
+                    if args.model_prefix.endswith('.onnx'):
+                        _logger.info('Loading model %s for eval' % args.model_prefix)
+                        from weaver.utils.nn.tools import evaluate_onnx
+                        test_metric, scores, labels, observers = evaluate_onnx(args.model_prefix, test_loader,epoch=-1, roc_prefix=roc_prefix)
+                    else:
+                            test_metric, test_loss, scores, labels, observers = evaluate(
+                                model, test_loader, dev, epoch=-1, for_training=False, tb_helper=tb, roc_prefix=roc_prefix)
+                    _logger.info('Test metric %.5f   //   Test loss %.5f' % (test_metric, test_loss), color='bold')
+                    del test_loader
+
+                    if args.predict_output:
+                        if '/' not in args.predict_output:
+                            predict_output = os.path.join(
+                                os.path.dirname(args.model_prefix),
+                                'predict_output', args.predict_output)
+                        else:
+                            predict_output = args.predict_output
+                        os.makedirs(os.path.dirname(predict_output), exist_ok=True)
+                        if name == '':
+                            output_path = predict_output
+                        else:
+                            base, ext = os.path.splitext(predict_output)
+                            output_path = base + '_' + name + ext
+                        if output_path.endswith('.root'):
+                            save_root(args, output_path, data_config, scores, labels, observers)
+                        else:
+                            save_parquet(args, output_path, scores, labels, observers)
+                        _logger.info('Written output to %s' % output_path, color='bold')
+
+            if args.test:
+                try:
+                    del val_loader
+                except UnboundLocalError:
+                    pass
+                if args.val:
+                    test_loaders, data_config = test_load(args)
+
+                best_valid_metric, best_valid_loss, best_valid_comb_loss, \
+                best_valid_aux_metric_pf, best_valid_aux_dist, best_valid_aux_loss,\
+                best_valid_aux_metric_pair = np.inf if args.regression_mode else -1, 0,0,0,0,0,0
+
+                if not args.test_epochs:
+                    test_epochs = val_epochs
+                elif ',' in args.test_epochs:
+                    test_epochs = [int(i) for i in args.test_epochs.split(',')]
+                elif ':' in args.test_epochs:
+                    test_epochs_ext= [int(i) for i in args.test_epochs.split(':')]
+                    test_epochs = [i for i in range(test_epochs_ext[0], test_epochs_ext[1]+1)]
+                elif args.test_epochs == '-1':
+                    test_epoch_len = len([filename for filename in os.listdir(os.path.dirname(args.model_prefix))\
+                                        if '_state.pt' in filename and 'best' not in filename])
+                    test_epochs = [int(i) for i in range(test_epoch_len)]
+                elif args.test_epochs == 'best+last':
+                    last_epoch = len([filename for filename in os.listdir(os.path.dirname(args.model_prefix))\
+                                        if '_state.pt' in filename and 'best' not in filename])-1
+                    test_epochs = [last_epoch]
+                elif args.test_epochs == 'best':
+                    test_epochs = [best_epoch]
                 else:
-                    predict_output = args.predict_output
-                os.makedirs(os.path.dirname(predict_output), exist_ok=True)
-                if name == '':
-                    output_path = predict_output
-                else:
-                    base, ext = os.path.splitext(predict_output)
-                    output_path = base + '_' + name + ext
-                if output_path.endswith('.root'):
-                    save_root(args, output_path, data_config, scores, labels, observers)
-                else:
-                    save_parquet(args, output_path, scores, labels, observers)
-                _logger.info('Written output to %s' % output_path, color='bold')
+                    test_epochs = [int(args.test_epochs)]
+                if best_epoch not in test_epochs: test_epochs.append(best_epoch)
+
+
+                # Test on epoch
+                for epoch in test_epochs:
+                    model_path = f'{args.model_prefix}_epoch-{epoch}_state.pt'
+                    _logger.info('Loading model %s for test' % model_path)
+                    model.load_state_dict(torch.load(model_path, map_location=dev))
+                    if gpus is not None and len(gpus) > 1:
+                        model = torch.nn.DataParallel(model, device_ids=gpus)
+                    model = model.to(dev)
+                    _logger.info('Epoch #%d testing' % epoch)
+
+                    if epoch >= args.no_aux_epoch and not args.aux_saturation:
+                        aux_weight = 0
+                    elif epoch >= args.no_aux_epoch and args.aux_saturation:
+                        aux_weight= 1/(args.no_aux_epoch)
+                    else:
+                        aux_weight = 1/(epoch+1)
+
+                    for name, get_test_loader in test_loaders.items():
+                        test_loader = get_test_loader()
+                        valid_metric, valid_comb_loss, valid_loss, valid_aux_metric_pf,\
+                        valid_aux_dist, valid_aux_metric_pair, valid_aux_loss = \
+                                evaluate(model, test_loader, dev, epoch, aux_weight,loss_func=loss_func,
+                                    aux_loss_func_clas=aux_loss_func_clas, aux_loss_func_regr=aux_loss_func_regr,
+                                    aux_loss_func_bin=aux_loss_func_bin,
+                                    steps_per_epoch=args.steps_per_epoch_val, tb_helper=tb, roc_prefix=roc_prefix,
+                                    eval_metrics=['roc_auc_score', 'roc_auc_score_matrix', 'confusion_matrix', 'save_labels'],
+                                    eval_aux_metrics = ['aux_confusion_matrix_pf_clas', 'aux_confusion_matrix_pair_bin', 'aux_save_labels'],
+                                    type_eval='test', epoch_division=args.epoch_division)
+
+                        best_epoch, best_valid_metric, best_valid_loss, best_valid_comb_loss, \
+                        best_valid_aux_metric_pf, best_valid_aux_dist, best_valid_aux_loss,\
+                        best_valid_aux_metric_pair = best_epoch_handler(args, best_epoch,
+                                best_valid_metric, valid_metric,
+                                best_valid_comb_loss, valid_comb_loss,
+                                best_valid_loss, valid_loss,
+                                best_valid_aux_metric_pf, valid_aux_metric_pf,
+                                best_valid_aux_dist, valid_aux_dist,
+                                best_valid_aux_metric_pair, valid_aux_metric_pair,
+                                best_valid_aux_loss, valid_aux_loss,
+                                local_rank, epoch, roc_prefix, eval_type='test',
+                                test = True, best=(epoch == best_epoch))
+                        copy_log(args, epoch, "test")
+                        break
+                    del test_loader
 
 
 def main():
@@ -865,10 +1235,12 @@ def main():
     if args.steps_per_epoch_val is not None and args.steps_per_epoch_val < 0:
         args.steps_per_epoch_val = None
 
+
+
     if '{auto}' in args.model_prefix or '{auto}' in args.log:
         import hashlib
         import time
-        model_name = time.strftime('%Y%m%d-%H%M%S') + "_" + os.path.basename(args.network_config).replace('.py', '')
+        model_name = time.strftime('%Y%m%d-%H%M%S') + "_" + os.path.basename(args.data_config).replace('.yaml', '')
         if len(args.network_option):
             model_name = model_name + "_" + hashlib.md5(str(args.network_option).encode('utf-8')).hexdigest()
         model_name += '_{optim}_lr{lr}_batch{batch}'.format(lr=args.start_lr,
@@ -877,6 +1249,14 @@ def main():
         args.model_prefix = args.model_prefix.replace('{auto}', model_name)
         args.log = args.log.replace('{auto}', model_name)
         print('Using auto-generated model prefix %s' % args.model_prefix)
+
+    if (args.val and not args.train) or (args.test and not args.train):
+        if ',' in  args.gpus:
+            args.gpus = '0'
+        args.extra_selection = "(np.abs(jet_eta)<1.4) & (jet_pt>30) & (jet_pt<200)"
+        args.extra_test_selection = "(np.abs(jet_eta)<1.4) & (jet_pt>30) & (jet_pt<200)"
+        print('Using extra selection: %s' % args.extra_selection)
+        print('Using extra test selection: %s' % args.extra_test_selection)
 
     if args.predict_gpus is None:
         args.predict_gpus = args.gpus
@@ -902,6 +1282,8 @@ def main():
             _main(args)
     else:
         _main(args)
+
+    _logger.info('Finished!\n\n')
 
 
 if __name__ == '__main__':

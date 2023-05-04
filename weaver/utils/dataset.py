@@ -27,6 +27,9 @@ def _finalize_inputs(table, data_config):
     # copy labels
     for k in data_config.label_names:
         output[k] = ak.to_numpy(table[k])
+    for k in data_config.aux_label_names:
+        output[k] = ak.to_numpy(table[k])
+
     # transformation
     for k, params in data_config.preprocess_params.items():
         if data_config._auto_standardization and params['center'] == 'auto':
@@ -38,15 +41,14 @@ def _finalize_inputs(table, data_config):
             table[k] = pad_fn(table[k], params['length'])
         # check for NaN
         if np.any(np.isnan(table[k])):
-            _logger.warning(
-                'Found NaN in %s, silently converting it to 0.', k)
+            #_logger.warning('Found NaN in %s, silently converting it to 0.', k)
             table[k] = np.nan_to_num(table[k])
     # stack variables for each input group
     for k, names in data_config.input_dicts.items():
         if len(names) == 1 and data_config.preprocess_params[names[0]]['length'] is None:
             output['_' + k] = ak.to_numpy(ak.values_astype(table[names[0]], 'float32'))
         else:
-            output['_' + k] = ak.to_numpy(np.stack([ak.values_astype(table[n], 'float32') for n in names], axis=1))
+            output['_' + k] = ak.to_numpy(np.stack([ak.to_numpy(table[n]).astype('float32') for n in names], axis=1))
     # copy monitor variables
     for k in data_config.z_variables:
         if k not in output:
@@ -151,7 +153,7 @@ class _SimpleIter(object):
         self.restart()
 
     def restart(self):
-        print('=== Restarting DataIter %s, seed=%s ===' % (self._name, self._seed))
+        #print('=== Restarting DataIter %s, seed=%s ===' % (self._name, self._seed))
         # re-shuffle filelist and load range if for training
         filelist = self.worker_filelist.copy()
         if self._sampler_options['shuffle']:
@@ -180,7 +182,7 @@ class _SimpleIter(object):
             str(self.load_range),
             '\n'.join(self.filelist[: 3]) + '\n ... ' + self.filelist[-1],)
 
-        _logger.info('Restarted DataIter %s, load_range=%s, file_list:\n%s' %
+        _logger.debug('Restarted DataIter %s, load_range=%s, file_list:\n%s' %
                      (self._name, str(self.load_range), json.dumps(self.worker_file_dict, indent=2)))
 
         # reset file fetching cursor
@@ -259,7 +261,7 @@ class _SimpleIter(object):
         # inputs
         X = {k: self.table['_' + k][i].copy() for k in self._data_config.input_names}
         # labels
-        y = {k: self.table[k][i].copy() for k in self._data_config.label_names}
+        y = {k: self.table[k][i].copy() for k in (self._data_config.label_names + self._data_config.aux_label_names)}
         # observers / monitor variables
         Z = {k: self.table[k][i].copy() for k in self._data_config.z_variables}
         return X, y, Z
