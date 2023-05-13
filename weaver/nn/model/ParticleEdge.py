@@ -232,7 +232,7 @@ def get_graph_feature(pts=None, fts=None, lvs=None, mask=None, ef_tensor=None,
             num_fts= outputs.size(1)
             dummy_ef= torch.zeros(batch_size, num_fts, num_points, k, device=ef_outputs.device)
             outputs=torch.cat((outputs, dummy_outputs), dim=1)
-            print("co:", co)
+            #print("co:", co)
             ef_outputs= torch.cat((dummy_ef,ef_outputs), dim=1) if co else torch.cat((ef_outputs, dummy_ef), dim=1)
             #print("outputs1\n", outputs.size() , outputs)
             #print("ef_outputs1\n", ef_outputs.size() , ef_outputs)
