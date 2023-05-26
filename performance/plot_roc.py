@@ -23,8 +23,8 @@ plt.rcParams['agg.path.chunksize'] = 10000
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=str, default='',
                     help='roc for various epochs')
-parser.add_argument('--not-show', action='store_true', default=False,
-                    help='do not show plots')
+parser.add_argument('--show', action='store_true', default=False,
+                    help='show plots')
 parser.add_argument('--save', action='store_true', default=False,
                     help='save plots')
 parser.add_argument('--primary', action='store_true', default=False,
@@ -216,7 +216,7 @@ def plt_fts(out_dir, name, fig_handle, axis_inf=None):
     if args.save:
         with open(f'{out_dir}/{name}.pickle', 'wb') as f:
             pickle.dump(fig_handle, f)
-    if not args.not_show:
+    if args.show:
         plt.show()
     plt.close()
 
