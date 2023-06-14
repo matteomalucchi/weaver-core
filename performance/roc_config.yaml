@@ -29,7 +29,7 @@ CMSSW_ROC_TYPE_DICT:
     JET_CMSSWParticleNet_bVSudsg: [[0,1], [4,5], primary]
     #JET_CMSSWDeepFlavour_bVSuds: [[0,1], [4], primary]
     #JET_CMSSWDeepFlavour_bVSg: [[0,1], [5], primary]
-    JET_CMSSWDeepFlavour_bVSudsg: [[0,1,2], [4,5], primary]
+    JET_CMSSWDeepFlavour_bVSudsg: [[0,1,2], [4,5], primary, [0,1]]
     PF_SIP_b+bcVSc+other: [[0,2], [1,3], pf_clas]
     PF_SIP_b+bc+cVSother: [[0,1,2], [3], pf_clas]
     PF_SIP_b+bcVSother: [[0,2], [3], pf_clas]
