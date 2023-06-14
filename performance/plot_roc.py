@@ -709,7 +709,7 @@ def fill_cmssw_net():
                         y_score,
                         CMSSW_ROC_TYPE_DICT[roc_type][0],
                         CMSSW_ROC_TYPE_DICT[roc_type][1],
-                        CMSSW_ROC_TYPE_DICT[roc_type][3]
+                        label_sig_true=CMSSW_ROC_TYPE_DICT[roc_type][3]
                         if len(CMSSW_ROC_TYPE_DICT[roc_type]) > 3
                         else None,
                     )
