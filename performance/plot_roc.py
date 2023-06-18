@@ -246,7 +246,8 @@ def plt_fts(out_dir, name, fig_handle, axis_inf=None):
     plt.legend(
         loc="upper left", fontsize=20
     )  # , order='alphabetical') #labelcolor='linecolor',
-
+    if "/" in name:
+        name = name.replace("/", "_")
     plt.savefig(f"{out_dir}/{name}.png", dpi=200, bbox_inches="tight")
     if args.save:
         with open(f"{out_dir}/{name}.pickle", "wb") as f:
