@@ -49,6 +49,10 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+wp_lists = (
+    list(np.linspace(0.0001, 0.0009, 9)) + list(np.linspace(0.001, 0.01, 10)) + [0.1]
+)
+
 # type of the network
 if "," in args.type:
     NET_TYPES = [k for k in args.type.split(",")]
@@ -204,7 +208,7 @@ def get_rates(y_t, y_s, l_s, l_b, weights=None, label_sig_true=None):
         y_true, y_score = get_labels(y_t, y_s, l_s, l_b, weights, label_sig_true)
         fpr, tpr, threshold = _m.roc_curve(y_true, y_score)
         roc_auc = _m.roc_auc_score(y_true, y_score)
-    return fpr, tpr, roc_auc
+    return fpr, tpr, roc_auc, threshold
 
 
 def plt_fts(out_dir, name, fig_handle, axis_inf=None):
@@ -431,7 +435,9 @@ def compute_roc(info, infile, dir_name, history, epoch, net_type):
                         continue
                 try:
                     # compute roc curve for each epoch
-                    fpr, tpr, roc_auc = get_rates(y_true, y_score, labels[0], labels[1])
+                    fpr, tpr, roc_auc, threshold = get_rates(
+                        y_true, y_score, labels[0], labels[1]
+                    )
 
                     # save roc curve for each epoch
                     if history:
@@ -442,6 +448,7 @@ def compute_roc(info, infile, dir_name, history, epoch, net_type):
                         roc_auc,
                         info[2],
                         info[3],
+                        threshold,
                     )
                 except (KeyError, IndexError):
                     return
@@ -450,7 +457,7 @@ def compute_roc(info, infile, dir_name, history, epoch, net_type):
                 roc_name = roc_type.split("_")[-1]
                 try:
                     # compute roc curve for each epoch
-                    fpr, tpr, roc_auc = get_rates(
+                    fpr, tpr, roc_auc, threshold = get_rates(
                         y_true, y_score, labels[0], labels[1], WEIGHTS_DICT[roc_name]
                     )
                     # save roc curve for each epoch
@@ -462,6 +469,7 @@ def compute_roc(info, infile, dir_name, history, epoch, net_type):
                         roc_auc,
                         info[2],
                         info[3],
+                        threshold,
                     )
                 except KeyError:
                     pass
@@ -474,7 +482,9 @@ def compute_roc(info, infile, dir_name, history, epoch, net_type):
                     y_true = y_true[y_mask[:, 0]]
                     y_score = y_score[y_mask[:, 0]]
                     # compute roc curve for each epoch
-                    fpr, tpr, roc_auc = get_rates(y_true, y_score, labels[0], labels[1])
+                    fpr, tpr, roc_auc, threshold = get_rates(
+                        y_true, y_score, labels[0], labels[1]
+                    )
                     # save roc curve for each epoch
                     if history:
                         info[0][f"{roc_type}_mask"][epoch] = (fpr, tpr, roc_auc)
@@ -484,12 +494,13 @@ def compute_roc(info, infile, dir_name, history, epoch, net_type):
                         roc_auc,
                         info[2],
                         info[3],
+                        threshold,
                     )
 
                     roc_name = roc_type.split("_")[-1]
 
                     # compute roc curve for each epoch
-                    fpr, tpr, roc_auc = get_rates(
+                    fpr, tpr, roc_auc, threshold = get_rates(
                         y_true, y_score, labels[0], labels[1], WEIGHTS_DICT[roc_name]
                     )
                     # save roc curve for each epoch
@@ -497,7 +508,14 @@ def compute_roc(info, infile, dir_name, history, epoch, net_type):
                         info[0][f"{roc_type}_mask_weights"][epoch] = (fpr, tpr, roc_auc)
                     EPOCHS_DICT[net_type][epoch][f"{roc_type}_mask_weights"][
                         info[1]
-                    ] = (fpr, tpr, roc_auc, info[2], info[3])
+                    ] = (
+                        fpr,
+                        tpr,
+                        roc_auc,
+                        info[2],
+                        info[3],
+                        threshold,
+                    )
                 except KeyError:
                     pass
 
@@ -705,7 +723,7 @@ def fill_cmssw_net():
                     except KeyError:
                         continue
 
-                    fpr, tpr, roc_auc = get_rates(
+                    fpr, tpr, roc_auc, threshold = get_rates(
                         y_true,
                         y_score,
                         CMSSW_ROC_TYPE_DICT[roc_type][0],
@@ -714,7 +732,14 @@ def fill_cmssw_net():
                         if len(CMSSW_ROC_TYPE_DICT[roc_type]) > 3
                         else None,
                     )
-                    CMSSW_NETS[roc_type] = (fpr, tpr, roc_auc, net_list[1], net_list[2])
+                    CMSSW_NETS[roc_type] = (
+                        fpr,
+                        tpr,
+                        roc_auc,
+                        net_list[1],
+                        net_list[2],
+                        threshold,
+                    )
 
                     # load the mask for the labels (if present)
                     try:
@@ -726,7 +751,7 @@ def fill_cmssw_net():
                         y_true = y_true[y_mask[:, 0]]
                         y_score = y_score[y_mask[:, 0]]
                         # compute roc curve for each epoch
-                        fpr, tpr, roc_auc = get_rates(
+                        fpr, tpr, roc_auc, threshold = get_rates(
                             y_true,
                             y_score,
                             CMSSW_ROC_TYPE_DICT[roc_type][0],
@@ -738,6 +763,7 @@ def fill_cmssw_net():
                             roc_auc,
                             net_list[1],
                             net_list[2],
+                            threshold,
                         )
 
                     except KeyError:
@@ -862,6 +888,11 @@ def _main(net_type, out_dir, label_dict):
         parallel_elem.join()
 
 
+def printer(f, rates, i):
+    f.write("threshold: %.4f \n" % rates[5][i])
+    f.write("fpr: %.4f \n" % rates[0][i])
+    f.write("tpr: %.4f \n" % rates[1][i])
+
 if __name__ == "__main__":
     start = time.time()
 
@@ -970,6 +1001,24 @@ if __name__ == "__main__":
         # Join parallel
         for parallel_elem in parallel_list:
             parallel_elem.join()
+
+    # write fpr, tpr, thresholds to file for each network
+    with open(f"{main_out_dir}/fpr_tpr_thresholds.txt", "w") as f:
+        for net_type, net_type_dict in EPOCHS_DICT.items():
+            for epoch, epoch_dict in net_type_dict.items():
+                if epoch == "best":
+                    for roc_type, networks_dict in epoch_dict.items():
+                        if "bVSudsg" in roc_type:
+                            for network, info in networks_dict.items():
+                                print_dict = {x: True for x in wp_lists}
+
+                                for i in range(len(info[0])):
+                                    for key, value in print_dict.items():
+                                        if info[0][i] >= key and value:
+                                            printer(f, info, i)
+                                            print_dict[key] = False
+                                f.write("\n############################################\n")
+
 
     print("Output directory:", main_out_dir)
     print("Total time: ", time.time() - start)
