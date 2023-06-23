@@ -1010,6 +1010,7 @@ if __name__ == "__main__":
                     for roc_type, networks_dict in epoch_dict.items():
                         if "bVSudsg" in roc_type:
                             for network, info in networks_dict.items():
+                                f.write("network: %s\n" % network)
                                 print_dict = {x: True for x in wp_lists}
 
                                 for i in range(len(info[0])):
