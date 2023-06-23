@@ -1019,7 +1019,18 @@ if __name__ == "__main__":
                                             printer(f, info, i)
                                             print_dict[key] = False
                                 f.write("\n############################################\n")
+        # do the same for CMSSW_NETS
+        for roc_type, info in CMSSW_NETS.items():
+            if "bVSudsg" in roc_type:
+                f.write("network: %s\n" % roc_type)
+                print_dict = {x: True for x in wp_lists}
 
+                for i in range(len(info[0])):
+                    for key, value in print_dict.items():
+                        if info[0][i] >= key and value:
+                            printer(f, info, i)
+                            print_dict[key] = False
+                f.write("\n############################################\n")
 
     print("Output directory:", main_out_dir)
     print("Total time: ", time.time() - start)
