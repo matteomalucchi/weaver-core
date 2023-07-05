@@ -203,7 +203,7 @@ def get_rates(y_t, y_s, l_s, l_b, weights=None, label_sig_true=None):
     """
 
     if l_s is None and l_b is None:
-        fpr, tpr, roc_auc = y_s, y_t, np.nan
+        fpr, tpr, roc_auc, threshold = y_s, y_t, np.nan, np.nan
     else:
         y_true, y_score = get_labels(y_t, y_s, l_s, l_b, weights, label_sig_true)
         fpr, tpr, threshold = _m.roc_curve(y_true, y_score)
