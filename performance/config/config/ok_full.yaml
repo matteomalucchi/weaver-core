@@ -1,0 +1,8 @@
+networks:
+        - ParticleEdgeOk Full
+        - ParticleEdgeOk-Origin Full
+        - ParticleEdgeOk-SameVtx Full
+        - ParticleEdgeOk-VtxPos Full
+        - ParticleEdgeOk-Origin+SameVtx Full
+        - ParticleEdgeOk-Origin+VtxPos+SameVtx Full
+        - ParticleEdgeOk-Origin+VtxDist+SameVtx Full

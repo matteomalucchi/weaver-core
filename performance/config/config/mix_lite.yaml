@@ -1,0 +1,11 @@
+networks:
+        - ParticleEdge-Origin Lite
+        - ParticleEdge Lite
+        - ParticleNeXt (w/o SV) Lite
+          #- ParticleEdge-Origin+SameVtx Lite
+        - ParticleNeXt Lite
+        - ParticleNet
+          #- ParticleEdgeOk Lite
+          #- ParticleEdgeOk-Origin Lite
+          #- ParticleEdgeOk-SameVtx Lite
+

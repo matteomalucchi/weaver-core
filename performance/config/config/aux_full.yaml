@@ -1,0 +1,13 @@
+## name of the directories where the various networks are saved.
+
+networks:
+        - ParticleEdge-Origin Full
+        - ParticleEdge-SameVtx Full
+        - ParticleEdge-Origin+VtxPos+SameVtx Full
+          #- ParticleEdge-Origin+VtxDist+SameVtx Full
+        - ParticleEdge-Origin+SameVtx Full
+        - ParticleEdge Full
+        - ParticleEdge-VtxPos Full  
+          #- ParticleEdge-Origin (aux saturation) Full
+          #- ParticleEdge-Origin+SameVtx (aux saturation) Full
+          #- ParticleEdge-Origin+VtxDist+VtxCoord Full

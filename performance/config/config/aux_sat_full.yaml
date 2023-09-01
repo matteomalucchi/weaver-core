@@ -1,0 +1,5 @@
+networks:
+        - ParticleEdge-Origin (aux saturation) Full
+        - ParticleEdge-Origin+SameVtx (aux saturation) Full
+        - ParticleEdge-SameVtx (aux saturation) Full
+        - ParticleEdge-Origin Full

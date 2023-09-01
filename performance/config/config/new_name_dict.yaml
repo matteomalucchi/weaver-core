@@ -1,0 +1,8 @@
+perf/20230220-232814-CMSAK4-PN-ranger-lr0.01-batch512-50M-noweights-230k:        ['ParticleNet', 'r', 'dashed'] #
+perf/20230302-172803-CMSAK4-PNXT-ef-aux-clas-ranger-lr0.01-batch512-50M-noweights-500k:               ['Origin Full', 'g', 'solid']
+perf/20230302-173122-CMSAK4-PNXT-ef-ranger-lr0.01-batch512-50M-noweights-500k:    ['ParticleEdge Full', 'g', 'solid'] #
+perf/20230302-173139-CMSAK4-PNXT-ranger-lr0.01-batch512-50M-noweights-500k:   ['ParticleNeXt Full', 'k', 'solid']
+perf/20230302-233102-CMSAK4-PNXT-ef-aux-cb-ranger-lr0.01-batch512-50M-noweights-500k:      ['Origin+SameVtx Full', 'purple', 'solid'] #
+perf/20230314-140300-CMSAK4-PNXT (w/o SV)-ranger-lr0.01-batch512-50M-noweights-500k (w/o SV):  ['ParticleNeXt (w/o SV) Full', 'gray', 'solid'] #
+training/CMSAK4/PN/20230220-232814-CMSAK4-PN-ranger-lr0.01-batch512-50M-noweights-230k/performance-20230220-232814-CMSAK4-PN-ranger-lr0.01-batch512-50M-noweights-230k:         ['ParticleNet', 'w', 'dashed'] #
+

@@ -1,0 +1,7 @@
+networks:
+        - ParticleEdgeOk Lite
+        - ParticleEdgeOk-Origin Lite
+        - ParticleEdgeOk-SameVtx Lite
+        - ParticleEdgeOk-Origin+VtxPos+SameVtx Lite
+        - ParticleEdgeOk-Origin+VtxDist+SameVtx Lite
+        - ParticleEdgeOk-Origin+SameVtx Lite
