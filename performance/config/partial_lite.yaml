@@ -1,8 +1,7 @@
 ## name of the directories where the various networks are saved.
 
 networks:
-        - ParticleEdge-Origin Lite
+        - ParticleEdgeOld-Origin Lite
         - ParticleNeXt Lite
-        - ParticleEdge Lite
+        - ParticleEdgeOld Lite
         - ParticleNet
-

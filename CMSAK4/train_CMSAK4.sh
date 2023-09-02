@@ -52,22 +52,22 @@ elif [[ "$model" == "PNXT" ]] || [[ "$model" == "PNXT_noSV" ]]; then
 elif [[ "$model" == "PNXT_lite" ]] || [[ "$model" == "PNXT_noSV_lite" ]]; then
     modelopts="networks/CMSAK4_PNXT_lite.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" != *"new"* && "$model" != *"ok"* ]]; then
-    modelopts="networks/CMSAK4_PNXT_ef.py"
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" == *"old"* ]]; then
+    modelopts="networks/CMSAK4_PNXT_ef_old.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" != *"new"* && "$model" != *"ok"* ]]; then
-    modelopts="networks/CMSAK4_PNXT_ef_lite.py"
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" == *"old"* ]]; then
+    modelopts="networks/CMSAK4_PNXT_ef_lite_old.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" == *"new"* && "$model" != *"ok"* ]]; then
-    modelopts="networks/CMSAK4_PNXT_ef_new.py"
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" == *"no"* ]]; then
+    modelopts="networks/CMSAK4_PNXT_ef_no.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" == *"new"* && "$model" != *"ok"* ]]; then
-    modelopts="networks/CMSAK4_PNXT_ef_lite_new.py"
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" == *"no"* ]]; then
+    modelopts="networks/CMSAK4_PNXT_ef_lite_no.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" != *"new"* && "$model" == *"ok"* ]]; then
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" != *"no"* && "$model" != *"old"* && "$model" == *"ok"*]]; then
     modelopts="networks/CMSAK4_PNXT_ef_ok.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" != *"new"* && "$model" == *"ok"* ]]; then
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" != *"no"* && "$model" != *"old"* && "$model" == *"ok"*]]; then
     modelopts="networks/CMSAK4_PNXT_ef_lite_ok.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
 else
@@ -77,7 +77,8 @@ fi
 
 # remove suffixes
 model=${model//"_lite"/}
-model=${model//"_new"/}
+model=${model//"_no"/}
+model=${model//"_old"/}
 model=${model//"_ok"/}
 
 suffix_specs=$2

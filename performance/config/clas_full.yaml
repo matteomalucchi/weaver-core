@@ -1,11 +1,11 @@
 networks:
-        - ParticleEdge-Origin Full
-          # - ParticleEdge-Origin+VtxDist+VtxCoord+SameVtx Full
-          #- ParticleEdge-Origin+VtxDist+VtxCoord Full
-        - ParticleEdge-Origin+SameVtx Full
-        - ParticleEdge-Origin+VtxDist+SameVtx Full
-          # - ParticleEdge-Origin (w/o SV) Full
-          # - ParticleEdge-Origin (aux saturation) Full
-          #- ParticleEdge-Origin+SameVtx (aux saturation) Full
+        - ParticleEdgeOld-Origin Full
+          # - ParticleEdgeOld-Origin+VtxDist+VtxCoord+SameVtx Full
+          #- ParticleEdgeOld-Origin+VtxDist+VtxCoord Full
+        - ParticleEdgeOld-Origin+SameVtx Full
+        - ParticleEdgeOld-Origin+VtxDist+SameVtx Full
+          # - ParticleEdgeOld-Origin (w/o SV) Full
+          # - ParticleEdgeOld-Origin (aux saturation) Full
+          #- ParticleEdgeOld-Origin+SameVtx (aux saturation) Full
           #- ParticleNeXt (w/o SV)-Origin Full
           #- ParticleNeXt (w/o SV)-Origin+SameVtx Full

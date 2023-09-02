@@ -1,8 +1,8 @@
 networks:
         - ParticleNet (w/o SV)
         - ParticleNeXt (w/o SV) Full
+        - ParticleEdgeOld (w/o SV) Full
+        - ParticleEdgeOld-Origin (w/o SV) Full
         - ParticleEdge (w/o SV) Full
         - ParticleEdge-Origin (w/o SV) Full
-        - ParticleEdgeOk (w/o SV) Full
-        - ParticleEdgeOk-Origin (w/o SV) Full
-        - ParticleEdgeOk-SameVtx (w/o SV) Full
+        - ParticleEdge-SameVtx (w/o SV) Full

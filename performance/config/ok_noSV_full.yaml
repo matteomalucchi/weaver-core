@@ -1,7 +1,7 @@
 networks:
-        - ParticleEdgeOk (w/o SV) Full
-        - ParticleEdgeOk-Origin (w/o SV) Full
-        - ParticleEdgeOk-SameVtx (w/o SV) Full
-        - ParticleEdgeOk-Origin+VtxPos+SameVtx (w/o SV) Full
-        - ParticleEdgeOk-Origin+VtxDist+SameVtx (w/o SV) Full
-        - ParticleEdgeOk-Origin+SameVtx (w/o SV) Full
+        - ParticleEdge (w/o SV) Full
+        - ParticleEdge-Origin (w/o SV) Full
+        - ParticleEdge-SameVtx (w/o SV) Full
+        - ParticleEdge-Origin+VtxPos+SameVtx (w/o SV) Full
+        - ParticleEdge-Origin+VtxDist+SameVtx (w/o SV) Full
+        - ParticleEdge-Origin+SameVtx (w/o SV) Full
