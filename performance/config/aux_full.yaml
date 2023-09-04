@@ -10,4 +10,4 @@ networks:
         - ParticleEdgeOld-VtxPos Full
           #- ParticleEdgeOld-Origin (aux saturation) Full
           #- ParticleEdgeOld-Origin+SameVtx (aux saturation) Full
-          #- ParticleEdgeOld-Origin+VtxDist+VtxCoord Full
+          #- ParticleEdgeOld-Origin+VtxPos Full

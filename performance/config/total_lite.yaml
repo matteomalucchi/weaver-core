@@ -4,8 +4,8 @@ networks:
         - ParticleEdgeOld-Origin Lite
         - ParticleEdgeOld-SameVtx Lite
         - TotAux Lite
-        - ParticleEdgeOld-Origin+VtxDist+VtxCoord Lite
-        - ParticleEdgeOld-VtxDist+VtxCoord Lite
+        - ParticleEdgeOld-Origin+VtxPos Lite
+        - ParticleEdgeOld-VtxPos Lite
         - ParticleNeXt Lite
         - ParticleEdgeOld Lite
         - ParticleNet

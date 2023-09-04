@@ -58,16 +58,16 @@ elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"*
 elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" == *"old"* ]]; then
     modelopts="networks/CMSAK4_PNXT_ef_lite_old.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" == *"no"* ]]; then
-    modelopts="networks/CMSAK4_PNXT_ef_no.py"
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" == *"not"* ]]; then
+    modelopts="networks/CMSAK4_PNXT_ef_not.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" == *"no"* ]]; then
-    modelopts="networks/CMSAK4_PNXT_ef_lite_no.py"
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" == *"not"* ]]; then
+    modelopts="networks/CMSAK4_PNXT_ef_lite_not.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" != *"no"* && "$model" != *"old"* && "$model" == *"ok"*]]; then
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" != *"not"* && "$model" != *"old"* && "$model" == *"ok"* ]]; then
     modelopts="networks/CMSAK4_PNXT_ef_ok.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" != *"no"* && "$model" != *"old"* && "$model" == *"ok"*]]; then
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" != *"not"* && "$model" != *"old"* && "$model" == *"ok"* ]]; then
     modelopts="networks/CMSAK4_PNXT_ef_lite_ok.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
 else
@@ -77,7 +77,7 @@ fi
 
 # remove suffixes
 model=${model//"_lite"/}
-model=${model//"_no"/}
+model=${model//"_not"/}
 model=${model//"_old"/}
 model=${model//"_ok"/}
 

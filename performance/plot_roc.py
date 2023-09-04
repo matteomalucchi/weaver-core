@@ -228,8 +228,8 @@ def plt_fts(out_dir, name, fig_handle, axis_inf=None):
             plt.ylabel("Reco [cm]", fontsize=20, loc="top")
             plt.plot([-10, 10], [-10, 10], "y--", label="True = Reco", linewidth=1)
     else:
-        plt.xlabel("True positive rate", fontsize=20, loc="right")
-        plt.ylabel("False positive rate ", fontsize=20, loc="top")
+        plt.xlabel("b-jet efficiency", fontsize=20, loc="right")
+        plt.ylabel("mis-id rate ", fontsize=20, loc="top")
         plt.xlim([axis_inf[0], 1.0005])
         plt.ylim([axis_inf[1], 1.005])
         minorLocator = MultipleLocator(0.05)
@@ -244,11 +244,21 @@ def plt_fts(out_dir, name, fig_handle, axis_inf=None):
     hep.style.use("CMS")
     hep.cms.label("Preliminary")
     hep.cms.label(year="UL18")
-    # TODO: add ttbar and the pt range
-    # hep.cms.label(exp='', label='$\mathrm{t}\overline{\mathrm{t}}, 30<p_{\mathrm{T}}<200 \mathrm{GeV}$', loc=1)
-    # plt.suptitle(name, horizontalalignment='center', verticalalignment='top', fontsize=25)
+
+    plt.text(
+        0.05,
+        0.45,
+        r"$t\bar{t} (\mathrm{AK4jets})$"
+        + "\n"
+        + r"$p_T \in (30, 200) \mathrm{GeV} , |\eta| < 1.4$",
+        fontsize=15,
+        horizontalalignment="left",
+        verticalalignment="bottom",
+        transform=plt.gca().transAxes,
+    )
+
     plt.legend(
-        loc="upper left", fontsize=20
+        loc="upper left", fontsize="15"
     )  # , order='alphabetical') #labelcolor='linecolor',
     if "/" in name:
         name = name.replace("/", "_")
@@ -353,6 +363,7 @@ def create_dict(info, infile, dir_name, history, epoch, net_type):
         # print(infile)
         # load labels for each epoch and label type
         with open(os.path.join(dir_name, infile), "rb") as f:
+            print(os.path.join(dir_name, infile))
             file = np.load(f, allow_pickle=True, mmap_mode="r")
             for roc_type, labels in labels_info.items():
                 if roc_type in EPOCHS_DICT[net_type][epoch].keys():

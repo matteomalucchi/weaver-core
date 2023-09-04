@@ -4,7 +4,7 @@ networks:
         - ParticleEdgeOld-SameVtx Lite
         - ParticleEdgeOld-Origin+VtxPos+SameVtx Lite
         - ParticleEdgeOld-Origin+SameVtx Lite
-          #- ParticleEdgeOld-Origin+VtxDist+VtxCoord Lite
+          #- ParticleEdgeOld-Origin+VtxPos Lite
         - ParticleEdgeOld-VtxPos Lite
         - ParticleEdgeOld-Origin Lite
         - ParticleEdgeOld Lite

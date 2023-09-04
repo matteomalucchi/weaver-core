@@ -3,9 +3,9 @@
 networks:
         - ParticleEdgeOld-Origin Full
         - ParticleEdgeOld-SameVtx Full
-        - ParticleEdgeOld-Origin+VtxDist+VtxCoord+SameVtx Full
-        - ParticleEdgeOld-Origin+VtxDist+VtxCoord Full
-        - ParticleEdgeOld-VtxDist+VtxCoord Full
+        - ParticleEdgeOld-Origin+VtxPos+SameVtx Full
+        - ParticleEdgeOld-Origin+VtxPos Full
+        - ParticleEdgeOld-VtxPos Full
         - ParticleNeXt Full
         - ParticleEdgeOld Full
         - ParticleNet

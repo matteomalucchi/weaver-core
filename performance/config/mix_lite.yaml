@@ -1,10 +1,19 @@
 networks:
-        - ParticleEdgeOld-Origin Lite
-        - ParticleEdgeOld Lite
-        - ParticleNeXt (w/o SV) Lite
-          #- ParticleEdgeOld-Origin+SameVtx Lite
-        - ParticleNeXt Lite
         - ParticleNet
-          #- ParticleEdge Lite
-          #- ParticleEdge-Origin Lite
-          #- ParticleEdge-SameVtx Lite
+        - ParticleNeXt Lite
+        - ParticleEdge Lite
+        - ParticleEdge-Origin Lite
+        - ParticleEdge-SameVtx Lite
+        - ParticleEdge-Origin+SameVtx Lite
+        - ParticleEdge-Origin+VtxPos+SameVtx Lite
+        # - ParticleEdge-Origin+VtxDist+SameVtx Lite
+
+
+        # - ParticleEdgeOld-Origin Lite
+        # - ParticleEdgeOld Lite
+        # - ParticleNeXt (w/o SV) Lite
+        #   #- ParticleEdgeOld-Origin+SameVtx Lite
+        # - ParticleNeXt Lite
+        #   #- ParticleEdge Lite
+        #   #- ParticleEdge-Origin Lite
+        #   #- ParticleEdge-SameVtx Lite
