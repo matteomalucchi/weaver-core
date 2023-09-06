@@ -539,7 +539,7 @@ def plotting_history_function(epoch_list, info, roc_type, out_dir, net_type):
     :param    out_dir : string with the name of the output directory
     :param    net_type : string with the type of the network
     """
-    fig_handle = plt.figure(figsize=(13, 10))
+    fig_handle = plt.figure(figsize=(13, 13))
     # loop over epochs
     for epoch in epoch_list:
         fpr, tpr, roc_auc = info[0][roc_type][epoch]
@@ -582,7 +582,7 @@ def plotting_function(
     """
 
     if SPECIAL_DICT["Scatter_True-Reco"] not in roc_type:
-        fig_handle = plt.figure(figsize=(13, 10))
+        fig_handle = plt.figure(figsize=(13, 13))
         # loop over networks
         if isinstance(networks_1, mp.managers.DictProxy):
             for network, rates in networks_1.items():
@@ -657,7 +657,7 @@ def plotting_function(
                     "_notZero": x_t != 0,
                     "": np.ones_like(x_t, dtype=bool),
                 }.items():
-                    fig_handle = plt.figure(figsize=(13, 10))
+                    fig_handle = plt.figure(figsize=(13, 13))
                     ax = plt.gca()
                     x_t_mask, y_r_mask = x_t[mask], y_r[mask]
 
@@ -693,7 +693,7 @@ def plotting_function(
                     "_notZero": x_t != 0,
                     "": np.ones_like(x_t, dtype=bool),
                 }.items():
-                    fig_handle = plt.figure(figsize=(13, 10))
+                    fig_handle = plt.figure(figsize=(13, 13))
                     x_t_mask, y_r_mask = x_t[mask], y_r[mask]
 
                     # plot true-reco histogram
