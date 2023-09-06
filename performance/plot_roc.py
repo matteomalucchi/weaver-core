@@ -229,7 +229,7 @@ def plt_fts(out_dir, name, fig_handle, axis_inf=None):
             plt.plot([-10, 10], [-10, 10], "y--", label="True = Reco", linewidth=1)
     else:
         plt.xlabel("b-jet efficiency", fontsize=20, loc="right")
-        plt.ylabel("mis-id rate ", fontsize=20, loc="top")
+        plt.ylabel("mis-id rate", fontsize=20, loc="top")
         plt.xlim([axis_inf[0], 1.0005])
         plt.ylim([axis_inf[1], 1.005])
         minorLocator = MultipleLocator(0.05)
