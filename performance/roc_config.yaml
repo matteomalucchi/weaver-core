@@ -63,9 +63,9 @@ AXIS_INF:
     b+bc+cVSother: [0.4, 0.005]
     b+bcVSother: [0.4, 0.005]
     SameVtx:  [0.4, 0.1]
-    bVSuds:  [0.5, 0.0001]
-    bVSg: [0.5, 0.0001]
-    bVSudsg: [0.5, 0.0001]
+    bVSuds:  [0.5, 0.0005]
+    bVSg: [0.5, 0.0005]
+    bVSudsg: [0.5, 0.0005]
 
 # dictionary with the axes limits
 AXIS_LIMITS:
