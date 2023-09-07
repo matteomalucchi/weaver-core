@@ -1,7 +1,7 @@
 networks:
         - ParticleEdge Lite
-        - ParticleEdge-Origin Lite
-        - ParticleEdge-SameVtx Lite
-        - ParticleEdge-Origin+VtxPos+SameVtx Lite
-        - ParticleEdge-Origin+VtxDist+SameVtx Lite
-        - ParticleEdge-Origin+SameVtx Lite
+        - ParticleEdge+Origin Lite
+        - ParticleEdge+SameVtx Lite
+        - ParticleEdge+Origin+VtxPos+SameVtx Lite
+        - ParticleEdge+Origin+VtxDist+SameVtx Lite
+        - ParticleEdge+Origin+SameVtx Lite

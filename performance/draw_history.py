@@ -111,7 +111,7 @@ def draw_plot(value, num_tot, info, save):
         )
         x = np.concatenate([x_part + i for i in range(1, args.last_epoch + 2)])
         # y=value[:num_tot]
-        y = uniform_filter1d(value[:num_tot], size=args.num_partial*2)
+        y = uniform_filter1d(value[:num_tot], size=args.num_partial)
     else:
         x = np.linspace(
             0, len(value[: args.last_epoch]), len(value[: args.last_epoch + 1])
@@ -162,7 +162,7 @@ if __name__ == "__main__":
                     for k in input_name
                 ]
                 infiles.sort()  # key=lambda s: int(re.findall(r'\d+', s)[-1]))
-            # print(infiles)
+            # print(input_name, infiles)
             # read the log files and extract the information
             for infile in infiles:
                 with open(infile) as f:
@@ -192,6 +192,7 @@ if __name__ == "__main__":
             for name, value in history_dict.items():
                 if "training" in name and len(info[0][name]) > 0:
                     for i in [42, 43, 44]:
+                        print("name", name, info[0][name], len(info[0][name]))
                         info[0][name][i] = (info[0][name][41] + info[0][name][45]) / 2
 
         tot_dict[net_type] = infile_dict

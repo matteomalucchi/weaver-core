@@ -1,17 +1,17 @@
 networks:
-        - ParticleNet
+        # - ParticleNet
         - ParticleNeXt Full
         - ParticleEdge Full
-        - ParticleEdge-Origin Full
-        - ParticleEdge-SameVtx Full
-        - ParticleEdge-Origin+SameVtx Full
-        - ParticleEdge-Origin+VtxPos+SameVtx Full
-        - ParticleEdge-VtxPos Full
-        # - ParticleEdge-Origin+VtxDist+SameVtx Full
+        - ParticleEdge+Origin Full
+        - ParticleEdge+SameVtx Full
+        - ParticleEdge+Origin+SameVtx Full
+        - ParticleEdge+Origin+VtxPos+SameVtx Full
+        # - ParticleEdge+VtxPos Full
+        # - ParticleEdge+Origin+VtxDist+SameVtx Full
 
         # - ParticleEdgeOld-Origin Full
         # - ParticleEdgeOld Full
         # - ParticleNeXt (w/o SV) Full
-          #- ParticleEdge-SameVtx (w/o SV) Full
+          #- ParticleEdge+SameVtx (w/o SV) Full
           # - ParticleEdge (w/o SV) Full
-          # - ParticleEdge-Origin (w/o SV) Full
+          # - ParticleEdge+Origin (w/o SV) Full
