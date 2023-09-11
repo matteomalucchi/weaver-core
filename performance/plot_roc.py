@@ -17,6 +17,7 @@ manager = mp.Manager()
 
 plt.rcParams["agg.path.chunksize"] = 10000
 
+
 # np.set_printoptions(threshold=np.inf)
 
 # parse arguments
@@ -47,11 +48,17 @@ parser.add_argument(
     default="roc_config",
     help="name of the file with the dictionary",
 )
+parser.add_argument("--fig-size", type=str, default="13,8", help="size of the figure")
 args = parser.parse_args()
 
 wp_lists = (
-    list(np.linspace(0.0001, 0.0009, 9)) + list(np.linspace(0.001, 0.009, 9)) + list(np.linspace(0.01, 0.1, 10))
+    # list(np.linspace(0.0001, 0.0009, 9))
+    # + list(np.linspace(0.001, 0.009, 9))
+    # + list(np.linspace(0.01, 0.1, 10))
+    [0.1, 0.01, 0.001]
 )
+
+fig_size = [int(k) for k in args.fig_size.split(",")]
 
 # type of the network
 if "," in args.type:
@@ -73,7 +80,7 @@ with open(f"{args.roc_config}.yaml", "r") as stream:
 
 ROC_TYPE_DICT = config_dicts["ROC_TYPE_DICT"]
 PF_EXTRA_FTS = config_dicts["PF_EXTRA_FTS"]
-AXIS_INF = config_dicts["AXIS_INF"]
+AXIS_INFO = config_dicts["AXIS_INFO"]
 AXIS_LIMITS = config_dicts["AXIS_LIMITS"]
 WEIGHTS_DICT = config_dicts["WEIGHTS_DICT"]
 CMSSW_ROC_TYPE_DICT = config_dicts["CMSSW_ROC_TYPE_DICT"]
@@ -226,10 +233,15 @@ def plt_fts(out_dir, name, fig_handle, axis_inf=None):
         else:
             plt.xlabel("True [cm]", fontsize=20, loc="right")
             plt.ylabel("Reco [cm]", fontsize=20, loc="top")
-            plt.plot([-10, 10], [-10, 10], "y--", label="True = Reco", linewidth=1)
+            plt.plot([-10, 10], [-10, 10], "w--", label="True = Reco", linewidth=2)
+        plt.legend(
+            loc="upper left",
+            fontsize="25",
+            labelcolor="linecolor",
+        )
     else:
-        plt.xlabel("b-jet efficiency", fontsize=20, loc="right")
-        plt.ylabel("mis-id rate", fontsize=20, loc="top")
+        plt.xlabel(axis_inf[2], fontsize=20, loc="right")
+        plt.ylabel(axis_inf[3], fontsize=20, loc="top")
         plt.xlim([axis_inf[0], 1.0005])
         plt.ylim([axis_inf[1], 1.005])
         minorLocator = MultipleLocator(0.05)
@@ -239,27 +251,26 @@ def plt_fts(out_dir, name, fig_handle, axis_inf=None):
             plt.yscale("log")
         else:
             ax.yaxis.set_minor_locator(minorLocator)
+        plt.text(
+            0.05,
+            0.3,
+            r"$t\bar{t} (\mathrm{AK4jets})$"
+            + "\n"
+            + r"$p_T \in (30, 200) \mathrm{GeV} , |\eta| < 1.4$",
+            fontsize=15,
+            horizontalalignment="left",
+            verticalalignment="bottom",
+            transform=plt.gca().transAxes,
+        )
+        plt.legend(
+            loc="upper left", fontsize="15"
+        )  # , order='alphabetical') #labelcolor='linecolor',
 
     plt.grid(which="both")
     hep.style.use("CMS")
     hep.cms.label("Preliminary")
     hep.cms.label(year="UL18")
 
-    plt.text(
-        0.05,
-        0.45,
-        r"$t\bar{t} (\mathrm{AK4jets})$"
-        + "\n"
-        + r"$p_T \in (30, 200) \mathrm{GeV} , |\eta| < 1.4$",
-        fontsize=15,
-        horizontalalignment="left",
-        verticalalignment="bottom",
-        transform=plt.gca().transAxes,
-    )
-
-    plt.legend(
-        loc="upper left", fontsize="15"
-    )  # , order='alphabetical') #labelcolor='linecolor',
     if "/" in name:
         name = name.replace("/", "_")
     plt.savefig(f"{out_dir}/{name}.png", dpi=200, bbox_inches="tight")
@@ -363,7 +374,7 @@ def create_dict(info, infile, dir_name, history, epoch, net_type):
         # print(infile)
         # load labels for each epoch and label type
         with open(os.path.join(dir_name, infile), "rb") as f:
-            print(os.path.join(dir_name, infile))
+            # print(os.path.join(dir_name, infile))
             file = np.load(f, allow_pickle=True, mmap_mode="r")
             for roc_type, labels in labels_info.items():
                 if roc_type in EPOCHS_DICT[net_type][epoch].keys():
@@ -539,7 +550,7 @@ def plotting_history_function(epoch_list, info, roc_type, out_dir, net_type):
     :param    out_dir : string with the name of the output directory
     :param    net_type : string with the type of the network
     """
-    fig_handle = plt.figure(figsize=(13, 10))
+    fig_handle = plt.figure(figsize=(fig_size[0], fig_size[1]))
     # loop over epochs
     for epoch in epoch_list:
         fpr, tpr, roc_auc = info[0][roc_type][epoch]
@@ -582,7 +593,7 @@ def plotting_function(
     """
 
     if SPECIAL_DICT["Scatter_True-Reco"] not in roc_type:
-        fig_handle = plt.figure(figsize=(13, 10))
+        fig_handle = plt.figure(figsize=(fig_size[0], fig_size[1]))
         # loop over networks
         if isinstance(networks_1, mp.managers.DictProxy):
             for network, rates in networks_1.items():
@@ -632,7 +643,7 @@ def plotting_function(
             out_dir,
             f"ROC_{roc_type}_{args.in_dict}_{net_type}_{network_name}{epoch}",
             fig_handle,
-            AXIS_INF[
+            AXIS_INFO[
                 roc_type.replace("_mask", "").replace("_weights", "").split("_")[-1]
             ],
         )
@@ -657,7 +668,7 @@ def plotting_function(
                     "_notZero": x_t != 0,
                     "": np.ones_like(x_t, dtype=bool),
                 }.items():
-                    fig_handle = plt.figure(figsize=(13, 10))
+                    fig_handle = plt.figure(figsize=(fig_size[0], fig_size[1]))
                     ax = plt.gca()
                     x_t_mask, y_r_mask = x_t[mask], y_r[mask]
 
@@ -693,7 +704,7 @@ def plotting_function(
                     "_notZero": x_t != 0,
                     "": np.ones_like(x_t, dtype=bool),
                 }.items():
-                    fig_handle = plt.figure(figsize=(13, 10))
+                    fig_handle = plt.figure(figsize=(fig_size[0], fig_size[1]))
                     x_t_mask, y_r_mask = x_t[mask], y_r[mask]
 
                     # plot true-reco histogram
@@ -900,9 +911,11 @@ def _main(net_type, out_dir, label_dict):
 
 
 def printer(f, rates, i):
-    f.write("threshold: %.4f \n" % rates[5][i])
-    f.write("fpr: %.4f \n" % rates[0][i])
-    f.write("tpr: %.4f \n" % rates[1][i])
+    # write in percentage
+    f.write("Mistag probability: %.2f%% \n" % (rates[0][i] * 100))
+    f.write("WP cuts: %.4f \n" % rates[5][i])
+    f.write("b-jet efficiency: %.1f%% \n" % (rates[1][i] * 100))
+
 
 if __name__ == "__main__":
     start = time.time()
@@ -1029,7 +1042,9 @@ if __name__ == "__main__":
                                         if info[0][i] >= key and value:
                                             printer(f, info, i)
                                             print_dict[key] = False
-                                f.write("\n############################################\n")
+                                f.write(
+                                    "\n############################################\n"
+                                )
         # do the same for CMSSW_NETS
         for roc_type, info in CMSSW_NETS.items():
             if "bVSudsg" in roc_type:

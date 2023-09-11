@@ -57,15 +57,15 @@ WEIGHTS_DICT:
     b+bc+cVSother: [0.22, 0.12, 0.03, 0.63]
     b+bcVSother: [0.22, 0.12, 0.03, 0.63]
 
-# dictionary with the axes inf
-AXIS_INF:
-    b+bcVSc+other: [0.4, 0.005]
-    b+bc+cVSother: [0.4, 0.005]
-    b+bcVSother: [0.4, 0.005]
-    SameVtx:  [0.4, 0.1]
-    bVSuds:  [0.5, 0.0005]
-    bVSg: [0.5, 0.0005]
-    bVSudsg: [0.5, 0.0005]
+# dictionary with the axes inf and names
+AXIS_INFO:
+    b+bcVSc+other: [0.4, 0.005, True Positive Rate, False Positive Rate]
+    b+bc+cVSother: [0.4, 0.005, True Positive Rate, False Positive Rate]
+    b+bcVSother: [0.4, 0.005, True Positive Rate, False Positive Rate]
+    SameVtx:  [0.4, 0.1, True Positive Rate, False Positive Rate]
+    bVSuds:  [0.5, 0.0005, b-jet efficiency, mis-id rate]
+    bVSg: [0.5, 0.0005, b-jet efficiency, mis-id rate]
+    bVSudsg: [0.5, 0.0005, b-jet efficiency, mis-id rate]
 
 # dictionary with the axes limits
 AXIS_LIMITS:
@@ -82,5 +82,5 @@ SPECIAL_DICT:
     SpecialMask: y_score_pf_clas
     LabelsEpoch: labels_epoch
     LabelsBest: labels_best
-    LabesTypes: {'full': ' Full', 'lite': ' Lite', 'noSVfull': ' (w/o SV) Full', 'noSVlite': ' (w/o SV) Lite'}
+    LabesTypes: {'full': ' Full', 'lite': ' Lite', 'noSVfull': ' (w/o SV) Full', 'noSVlite': ' (w/o SV) Lite', 'noSV': ' (w/o SV)', 'comp': ' comparison'}
     ReplaceString: {' (w/o SV)': 'noSV'}

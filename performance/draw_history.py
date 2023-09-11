@@ -40,7 +40,10 @@ parser.add_argument(
     default="history_config",
     help="name of the file with the dictionary",
 )
+parser.add_argument("--fig-size", type=str, default="13,13", help="size of the figure")
 args = parser.parse_args()
+
+fig_size=[int(k) for k in args.fig_size.split(",")]
 
 # type of the network
 if "," in args.type:
@@ -181,9 +184,40 @@ if __name__ == "__main__":
                             #     elif "Jet" in name and "loss" in name and (info[0][name][-1]-val) > 0.1 * info[0][name][-1]:
                             #         val = info[0][name][-1]+(val - info[0][name][-1])*0.01
                             if len(info[0][name]) > 0:
-                                if abs(val - info[0][name][-1]) > info[0][name][-1]:
-                                    # print("name", name , "old_val", info[0][name][-1], "val", val)
-                                    val = info[0][name][-1]+(val - info[0][name][-1])*info[0][name][-1]/val
+                                if (val - info[0][name][-1]) > info[0][name][-1]:
+                                    if "clas" in input_name and "Jet" in name:
+                                        print(
+                                            input_name,
+                                            "name",
+                                            name,
+                                            "old_val",
+                                            info[0][name][-1],
+                                            "val",
+                                            val,
+                                        )
+                                    val = (
+                                        info[0][name][-1]
+                                        + (val - info[0][name][-1])
+                                        * info[0][name][-1]
+                                        / val  # /100
+                                    )
+                                elif (info[0][name][-1] - val) > val:
+                                    if "clas" in input_name and "Jet" in name:
+                                        print(
+                                            input_name,
+                                            "name",
+                                            name,
+                                            "old_val",
+                                            info[0][name][-1],
+                                            "val",
+                                            val,
+                                        )
+                                    val = (
+                                        info[0][name][-1]
+                                        - (info[0][name][-1] - val)
+                                        * val
+                                        / info[0][name][-1]  # /100
+                                    )
                             # if val > 100:
                             #     val = -1
 
@@ -192,7 +226,7 @@ if __name__ == "__main__":
             for name, value in history_dict.items():
                 if "training" in name and len(info[0][name]) > 0:
                     for i in [42, 43, 44]:
-                        print("name", name, info[0][name], len(info[0][name]))
+                        # print("name", name, info[0][name], len(info[0][name]))
                         info[0][name][i] = (info[0][name][41] + info[0][name][45]) / 2
 
         tot_dict[net_type] = infile_dict
@@ -200,7 +234,7 @@ if __name__ == "__main__":
         # plot the history
         num_tot = (args.last_epoch + 1) * args.num_partial
         for history, _ in history_dict.items():
-            fig_handle = plt.figure(figsize=(13, 13))
+            fig_handle = plt.figure(figsize=(fig_size[0], fig_size[1]))
             save = False
             for _, info in infile_dict.items():
                 for name, value in info[0].items():
@@ -230,7 +264,7 @@ if __name__ == "__main__":
         # plot the history
         num_tot = (args.last_epoch + 1) * args.num_partial
         for history, _ in history_dict.items():
-            fig_handle = plt.figure(figsize=(13, 13))
+            fig_handle = plt.figure(figsize=(fig_size[0], fig_size[1]))
             save = False
             for net_type in NET_TYPES:
                 for _, info in tot_dict[net_type].items():

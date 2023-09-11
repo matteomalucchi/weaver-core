@@ -1,0 +1,4 @@
+networks:
+        - ParticleEdge Full
+        - ParticleEdge Lite
+        - ParticleEdge (w/o SV) Full

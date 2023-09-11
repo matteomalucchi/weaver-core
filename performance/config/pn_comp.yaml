@@ -1,0 +1,6 @@
+networks:
+        - ParticleNet
+        - ParticleNet (w/o SV)
+        - ParticleNeXt Full
+        - ParticleNeXt Lite
+        - ParticleNeXt (w/o SV) Full
