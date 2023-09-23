@@ -238,6 +238,7 @@ def plt_fts(out_dir, name, fig_handle, axis_inf=None):
             loc="upper left",
             fontsize="25",
             labelcolor="linecolor",
+            frameon=False
         )
     else:
         plt.xlabel(axis_inf[2], fontsize=20, loc="right")
@@ -263,7 +264,7 @@ def plt_fts(out_dir, name, fig_handle, axis_inf=None):
             transform=plt.gca().transAxes,
         )
         plt.legend(
-            loc="upper left", fontsize="15"
+            loc="upper left", fontsize="15", frameon=False
         )  # , order='alphabetical') #labelcolor='linecolor',
 
     plt.grid(which="both")
