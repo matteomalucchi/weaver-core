@@ -199,7 +199,7 @@ if __name__ == "__main__":
                                         info[0][name][-1]
                                         + (val - info[0][name][-1])
                                         * info[0][name][-1]
-                                        / val  # /100
+                                        / val   /10
                                     )
                                 elif (info[0][name][-1] - val) > val:
                                     if "clas" in input_name and "Jet" in name:
@@ -216,7 +216,7 @@ if __name__ == "__main__":
                                         info[0][name][-1]
                                         - (info[0][name][-1] - val)
                                         * val
-                                        / info[0][name][-1]  # /100
+                                        / info[0][name][-1]   /10
                                     )
                             # if val > 100:
                             #     val = -1

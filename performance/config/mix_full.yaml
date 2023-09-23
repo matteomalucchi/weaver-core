@@ -8,6 +8,5 @@ networks:
         - ParticleEdge+Origin+VtxPos+SameVtx Full
         - ParticleEdge+Origin+VtxPos+SameVtx Full (aux saturation)
 
-  (aux saturation)
         # - ParticleEdge+VtxPos Full
         # - ParticleEdge+Origin+VtxDist+SameVtx Full

@@ -2,3 +2,6 @@ networks:
         - ParticleEdge Full
         - ParticleEdge Lite
         - ParticleEdge (w/o SV) Full
+        - ParticleEdge+Origin Full
+        - ParticleEdge+Origin Lite
+        - ParticleEdge+Origin (w/o SV) Full
