@@ -55,7 +55,7 @@ wp_lists = (
     # list(np.linspace(0.0001, 0.0009, 9))
     # + list(np.linspace(0.001, 0.009, 9))
     # + list(np.linspace(0.01, 0.1, 10))
-    [0.1, 0.01, 0.001]
+    [0.1, 0.01, 0.001, 0.0005]
 )
 
 fig_size = [int(k) for k in args.fig_size.split(",")]
