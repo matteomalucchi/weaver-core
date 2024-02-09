@@ -1,0 +1,11 @@
+networks:
+        - ParticleNet
+        - ParticleNeXt Full
+        - ParticleNeXt (w/o SV) Full
+        - ParticleEdge Full
+        - ParticleEdge+Origin (w/o SV) Full
+        - ParticleEdge+SameVtx (w/o SV) Full
+        - ParticleEdge+Origin+SameVtx (w/o SV) Full
+
+        # - ParticleEdge+Origin+VtxPos+SameVtx Full
+

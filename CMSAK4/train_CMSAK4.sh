@@ -52,22 +52,22 @@ elif [[ "$model" == "PNXT" ]] || [[ "$model" == "PNXT_noSV" ]]; then
 elif [[ "$model" == "PNXT_lite" ]] || [[ "$model" == "PNXT_noSV_lite" ]]; then
     modelopts="networks/CMSAK4_PNXT_lite.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" != *"new"* && "$model" != *"ok"* ]]; then
-    modelopts="networks/CMSAK4_PNXT_ef.py"
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" == *"old"* ]]; then
+    modelopts="networks/CMSAK4_PNXT_ef_old.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" != *"new"* && "$model" != *"ok"* ]]; then
-    modelopts="networks/CMSAK4_PNXT_ef_lite.py"
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" == *"old"* ]]; then
+    modelopts="networks/CMSAK4_PNXT_ef_lite_old.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" == *"new"* && "$model" != *"ok"* ]]; then
-    modelopts="networks/CMSAK4_PNXT_ef_new.py"
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" == *"not"* ]]; then
+    modelopts="networks/CMSAK4_PNXT_ef_not.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" == *"new"* && "$model" != *"ok"* ]]; then
-    modelopts="networks/CMSAK4_PNXT_ef_lite_new.py"
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" == *"not"* ]]; then
+    modelopts="networks/CMSAK4_PNXT_ef_lite_not.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" != *"new"* && "$model" == *"ok"* ]]; then
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" != *"lite"* && "$model" != *"not"* && "$model" != *"old"* && "$model" == *"ok"* ]]; then
     modelopts="networks/CMSAK4_PNXT_ef_ok.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
-elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" != *"new"* && "$model" == *"ok"* ]]; then
+elif [[ "$model" == *"ef"* ||  "$model" == *"aux"* ]] && [[ "$model" == *"PNXT"* && "$model" == *"lite"* && "$model" != *"not"* && "$model" != *"old"* && "$model" == *"ok"* ]]; then
     modelopts="networks/CMSAK4_PNXT_ef_lite_ok.py"
     batchopts="--batch-size 512 --start-lr 1e-2"
 else
@@ -77,7 +77,8 @@ fi
 
 # remove suffixes
 model=${model//"_lite"/}
-model=${model//"_new"/}
+model=${model//"_not"/}
+model=${model//"_old"/}
 model=${model//"_ok"/}
 
 suffix_specs=$2
@@ -97,12 +98,12 @@ echo "extra selections: ${extra_selection}"
 
 $CMD \
     --data-train \
-    "ttjets:${in_dir}/output_big/TTJets_TuneCP5_13TeV-amcatnloFXFX-pythia8/output_10Mevents_*.root" \
-    "qcd:${in_dir}/output_big/QCD_Pt-15to7000_TuneCP5_Flat2018_13TeV_pythia8/output_10Mevents_*.root" \
+    "ttjets:${CINECA_SCRATCH}/output_big/TTJets_TuneCP5_13TeV-amcatnloFXFX-pythia8/output_10Mevents_*.root" \
+    "qcd:${CINECA_SCRATCH}/output_big/QCD_Pt-15to7000_TuneCP5_Flat2018_13TeV_pythia8/output_10Mevents_*.root" \
     --data-val \
-    ${in_dir}/output_big/TTJets_TuneCP5_13TeV-madgraphMLM-pythia8_val/output_10Mevents_*.root \
+    ${CINECA_SCRATCH}/output_big/TTJets_TuneCP5_13TeV-madgraphMLM-pythia8_val/output_10Mevents_*.root \
     --data-test \
-    ${in_dir}/output_big/TTJets_TuneCP5_13TeV-madgraphMLM-pythia8_test/output_10Mevents_*.root \
+    ${CINECA_SCRATCH}/output_big/TTJets_TuneCP5_13TeV-madgraphMLM-pythia8_test/output_10Mevents_*.root \
     --data-config data/CMSAK4_${model}.yaml --network-config $modelopts \
     --model-prefix ${store}training/CMSAK4/${model}/{auto}${suffix}_${suffix_specs}/net \
     $dataopts $batchopts \

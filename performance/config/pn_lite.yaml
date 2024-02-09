@@ -1,0 +1,3 @@
+networks:
+        - ParticleNet
+        - ParticleNet (w/o SV)

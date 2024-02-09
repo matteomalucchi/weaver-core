@@ -1,0 +1,11 @@
+networks:
+        - ParticleEdgeOld-Origin Full
+          # - ParticleEdgeOld-Origin+VtxPos+SameVtx Full
+          #- ParticleEdgeOld-Origin+VtxPos Full
+        - ParticleEdgeOld-Origin+SameVtx Full
+        - ParticleEdgeOld-Origin+VtxDist+SameVtx Full
+          # - ParticleEdgeOld-Origin (w/o SV) Full
+          # - ParticleEdgeOld-Origin (aux saturation) Full
+          #- ParticleEdgeOld-Origin+SameVtx (aux saturation) Full
+          #- ParticleNeXt (w/o SV)-Origin Full
+          #- ParticleNeXt (w/o SV)-Origin+SameVtx Full

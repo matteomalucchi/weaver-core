@@ -1,0 +1,7 @@
+## name of the directories where the various networks are saved.
+
+networks:
+        - ParticleEdgeOld-Origin Full
+        - ParticleNeXt Full
+        - ParticleEdgeOld Full
+        - ParticleNet

@@ -14,7 +14,7 @@ ROC_TYPE_DICT:
         PF_b+bcVSother: [[0,2], [3], pf_clas]
         # PF_SIP_b+bcVSc+other: [[0,2], [1,3], pf_clas]
         # PF_SIP_b+bc+cVSother: [[0,1,2], [3], pf_clas]
-        PF_VtxPos: [null, null, pf_regr]
+        PF_VtxPosition: [null, null, pf_regr]
         PAIR_SameVtx: [[0], null, pair_bin]
     primary_labels:
         ## 0=b, 1=bb, 4=uds, 5=g
@@ -26,10 +26,10 @@ ROC_TYPE_DICT:
 CMSSW_ROC_TYPE_DICT:
     #JET_CMSSWParticleNet_bVSuds: [[0,1], [4], primary]
     #JET_CMSSWParticleNet_bVSg: [[0,1], [5], primary]
-    JET_CMSSWParticleNet_bVSudsg: [[0,1], [4,5], primary]
+    JET_ParticleNet-CMSSW_bVSudsg: [[0,1], [4,5], primary]
     #JET_CMSSWDeepFlavour_bVSuds: [[0,1], [4], primary]
     #JET_CMSSWDeepFlavour_bVSg: [[0,1], [5], primary]
-    JET_CMSSWDeepFlavour_bVSudsg: [[0,1], [4,5], primary]
+    JET_DeepFlavour-CMSSW_bVSudsg: [[0,1,2], [4,5], primary, [0,1]]
     PF_SIP_b+bcVSc+other: [[0,2], [1,3], pf_clas]
     PF_SIP_b+bc+cVSother: [[0,1,2], [3], pf_clas]
     PF_SIP_b+bcVSother: [[0,2], [3], pf_clas]
@@ -42,14 +42,14 @@ PF_EXTRA_FTS:
     PF_SIP_b+bcVSc+other: [pf_mask_charged, pf_var_IPsig]
     PF_SIP_b+bc+cVSother: [pf_mask_charged, pf_var_IPsig]
     PF_SIP_b+bcVSother: [pf_mask_charged, pf_var_IPsig]
-    PF_VtxPos: [pf_mask_from_b]
-    #PF_VtxPos : [y_score_pf_clas]
-    JET_CMSSWDeepFlavour_bVSuds: [null, y_deep_score_primary]
-    JET_CMSSWDeepFlavour_bVSg: [null, y_deep_score_primary]
-    JET_CMSSWDeepFlavour_bVSudsg: [null, y_deep_score_primary]
-    JET_CMSSWParticleNet_bVSuds: [null, y_pn_score_primary]
-    JET_CMSSWParticleNet_bVSg: [null, y_pn_score_primary]
-    JET_CMSSWParticleNet_bVSudsg: [null, y_pn_score_primary]
+    PF_VtxPosition: [pf_mask_from_b]
+    #PF_VtxPosition : [y_score_pf_clas]
+    JET_DeepFlavour-CMSSW_bVSuds: [null, y_deep_score_primary]
+    JET_DeepFlavour-CMSSW_bVSg: [null, y_deep_score_primary]
+    JET_DeepFlavour-CMSSW_bVSudsg: [null, y_deep_score_primary]
+    JET_ParticleNet-CMSSW_bVSuds: [null, y_pn_score_primary]
+    JET_ParticleNet-CMSSW_bVSg: [null, y_pn_score_primary]
+    JET_ParticleNet-CMSSW_bVSudsg: [null, y_pn_score_primary]
 
 # dictionary with the weights
 WEIGHTS_DICT:
@@ -57,30 +57,30 @@ WEIGHTS_DICT:
     b+bc+cVSother: [0.22, 0.12, 0.03, 0.63]
     b+bcVSother: [0.22, 0.12, 0.03, 0.63]
 
-# dictionary with the axes inf
-AXIS_INF:
-    b+bcVSc+other: [0.4, 0.005]
-    b+bc+cVSother: [0.4, 0.005]
-    b+bcVSother: [0.4, 0.005]
-    SameVtx:  [0.4, 0.1]
-    bVSuds:  [0.5, 0.0001]
-    bVSg: [0.5, 0.0001]
-    bVSudsg: [0.5, 0.0001]
+# dictionary with the axes inf and names
+AXIS_INFO:
+    b+bcVSc+other: [0.4, 0.005, True Positive Rate, False Positive Rate]
+    b+bc+cVSother: [0.4, 0.005, True Positive Rate, False Positive Rate]
+    b+bcVSother: [0.4, 0.005, True Positive Rate, False Positive Rate]
+    SameVtx:  [0.4, 0.1, True Positive Rate, False Positive Rate]
+    bVSuds:  [0.5, 0.0005, b-jet efficiency, mis-id rate]
+    bVSg: [0.5, 0.0005, b-jet efficiency, mis-id rate]
+    bVSudsg: [0.5, 0.0005, b-jet efficiency, mis-id rate]
 
 # dictionary with the axes limits
 AXIS_LIMITS:
-    0: [[30, 100],[[0,0.5],[0,3]], VtxDist, 3]
+    0: [[30, 30],[[0,0.5],[0,0.5]], VtxDist, 3]
     1: [[200, 200],[[-0.06,0.06],[-0.06,0.06]], VtxX, 0.2]
     2: [[200, 200],[[-0.06,0.06],[-0.06,0.06]], VtxY, 0.2]
     3: [[200, 200],[[-3, 3],[-3,3]], VtxZ, 3]
 
 # dictionary with the special requests
 SPECIAL_DICT:
-    Scatter_True-Reco: VtxPos
+    Scatter_True-Reco: VtxPosition
     LogScale: JET
     Primary: primary
     SpecialMask: y_score_pf_clas
     LabelsEpoch: labels_epoch
     LabelsBest: labels_best
-    LabesTypes: {'full': ' Full', 'lite': ' Lite', 'noSV_full': ' (w/o SV) Full', 'noSV_lite': ' (w/o SV) Lite'}
+    LabesTypes: {'full': ' Full', 'lite': ' Lite', 'noSVfull': ' (w/o SV) Full', 'noSVlite': ' (w/o SV) Lite', 'noSV': ' (w/o SV)', 'comp': ' comparison'}
     ReplaceString: {' (w/o SV)': 'noSV'}

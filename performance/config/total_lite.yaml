@@ -1,0 +1,12 @@
+## name of the directories where the various networks are saved.
+
+networks:
+        - ParticleEdgeOld-Origin Lite
+        - ParticleEdgeOld-SameVtx Lite
+        - TotAux Lite
+        - ParticleEdgeOld-Origin+VtxPos Lite
+        - ParticleEdgeOld-VtxPos Lite
+        - ParticleNeXt Lite
+        - ParticleEdgeOld Lite
+        - ParticleNet
+        - ParticleEdgeOld-Origin+SameVtx Lite

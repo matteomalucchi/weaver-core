@@ -1,0 +1,7 @@
+## name of the directories where the various networks are saved.
+
+networks:
+        - ParticleNeXt (w/o SV) Full
+        - ParticleNeXt Full
+        - ParticleNeXt (w/o SV) Lite
+        - ParticleNeXt Lite

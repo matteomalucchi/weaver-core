@@ -1,0 +1,7 @@
+networks:
+        - ParticleEdge (w/o SV) Full
+        - ParticleEdge+Origin (w/o SV) Full
+        - ParticleEdge+SameVtx (w/o SV) Full
+        - ParticleEdge+Origin+VtxPos+SameVtx (w/o SV) Full
+        - ParticleEdge+Origin+VtxDist+SameVtx (w/o SV) Full
+        - ParticleEdge+Origin+SameVtx (w/o SV) Full
